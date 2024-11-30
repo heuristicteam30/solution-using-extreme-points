@@ -116,6 +116,7 @@ public:
                 //check if it can fit
                 coords e;e.box = x.first.first; e.x = x.first.second.first;e.y = x.first.second.second.first;e.z = x.first.second.second.second;
                 if(checkCollision(e, p))continue;
+                p.isPriority = b.isPriority;
                 int score = this->merit.val(e,p,this);
                 if(best.first<score)best = pair<int,pair<coords,Box>>(score,pair<coords,Box>(e,p));
             }
@@ -453,9 +454,11 @@ public:
 #define BEST_K_SOLNS 3
 int residueFunc(coords c, Box b,Solver* s){
     int r= 0;
-//    r-=s->ULDHasPriority[c.box]*100000000000;
+    r+=s->ULDHasPriority[c.box]*100000000000*b.isPriority;
     float relativeDifference =(s->ep[convertCoords(c)].first - b.l)/1.0/s->ep[convertCoords(c)].first+(s->ep[convertCoords(c)].second.first - b.b)/1.0/s->ep[convertCoords(c)].second.first+(s->ep[convertCoords(c)].second.second - b.h)/1.0/s->ep[convertCoords(c)].second.second;
-    r+=relativeDifference*1000000;
+    relativeDifference*=1000000;
+//    float relativeDifference =(s->ep[convertCoords(c)].first - b.l)+(s->ep[convertCoords(c)].second.first - b.b)+(s->ep[convertCoords(c)].second.second - b.h);
+    r+=relativeDifference;
     return r;
 }
 struct Dimensions
