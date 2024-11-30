@@ -2,6 +2,13 @@
 
 using namespace std;
 
+bool check(const pair<pair<int,int>,pair<int,int>>&a, const pair<pair<int,int>,pair<int,int>>&b)
+        {
+            int p=a.second.second;
+            int q=b.second.second;
+            // return true;
+            return (p>q);
+        }
 Solver::Solver(Sorter sorter_, Merit merit_, vector<Box> boxes, vector<Uld> ULD_)
 {
     this->merit = merit_;
@@ -126,6 +133,7 @@ void Solver::update(int i)
     ULDl[b].com.y += (placement[i].first.y + placement[i].second.b / 2) * data[i].weight;
     ULDl[b].com.z += (placement[i].first.z + placement[i].second.h / 2) * data[i].weight;
     ULDl[b].weight += data[i].weight;
+    surfaces.insert(make_pair(placement[i].first.z+placement[i].second.h,make_pair(make_pair(placement[i].first.x,placement[i].first.y),make_pair(placement[i].first.x + placement[i].second.l,placement[i].first.y + placement[i].second.b))));
 }
 
 vector<coords> Solver::getCOM()
@@ -263,6 +271,52 @@ coords Solver::beamprojectXPos(coords ob1)
     ans.box = ob1.box;
     return ans;
 }
+void Solver::addEP2(int i)
+        {
+            // ep.erase(pair<int,pii>(placement[i].first.x,pii(placement[i].first.y,placement[i].first.z)));
+            coords ob1;
+            auto p = placement[i];
+            // placement[i].first=def;
+            ob1.x=p.first.x+placement[i].second.l;
+            ob1.y=p.first.y;
+            ob1.z=p.first.z+p.second.h;
+            vector<pair<pair<int,int>,pair<int,int>>>faces,faces_checked;
+            For(j,i)
+            {
+                faces.push_back(make_pair(make_pair(placement[j].first.x,placement[j].first.y),make_pair(placement[j].first.y+placement[j].second.b,placement[j].first.z+placement[j].second.h)));
+            }
+            sort(faces.begin(),faces.end(),check);
+            For(j,i)
+            {
+                int x1=faces[j].first.first;
+                // int y1=faces[j].second.first;
+                int z1=faces[j].second.second;
+                if(ob1.z<z1 || ob1.x>x1)
+                continue;
+                if(((ob1.y>=faces[j].first.second) && (ob1.y<=faces[j].second.first))==false)
+                continue;
+                int t=0;
+                for(auto yy:placement)
+                {
+                    int x=yy.first.x;
+                    int y=yy.first.y;
+                    int z=yy.first.z;
+                    if(ob1.x<x && x<x1 && z1>yy.first.z && z1<yy.first.z+yy.second.h)
+                    t=1;
+                }
+                // if(t==0)
+                if(t==0)
+                {
+                    coords d;
+                    d.x=ob1.x;
+                    d.y=ob1.y;
+                    d.z=faces[j].second.second;
+                    auto r =getResidueSpace(d);
+                    if(r.first*r.second.first*r.second.second!=0)ep[convertCoords(d)] = r;
+                }
+                // faces_checked.push_back(faces[j]);
+            }
+        }
 void Solver::addEP(int i)
 {
     ep.erase(pair<int, pair<int, pii>>(placement[i].first.box, pair<int, pii>(placement[i].first.x, pii(placement[i].first.y, placement[i].first.z))));
@@ -475,6 +529,26 @@ coords Solver::rayProjectZPos(coords start)
     }
     start.z = max(start.z, x);
     return start;
+}
+bool Solver::checkGravity(coords e, Box b)
+{
+    // sort(surfaces.begin(),surfaces.end());
+    auto start=surfaces.lower_bound(make_pair(e.z,make_pair(make_pair(0,0),make_pair(0,0))));
+    auto end=prev(surfaces.lower_bound(make_pair(e.z,make_pair(make_pair(3000,3000),make_pair(3000,3000)))));
+    pair<int,int>x1_min=make_pair(e.x,e.y),x1_max={e.x+b.l,e.x+b.b};
+    int flag=0;
+    for(auto i=start;i!=end;i++)
+    {
+        if((*i).first!=e.z)
+        continue;
+        pair<int,pair<pair<int,int>,pair<int,int>>>p=*i;
+        pair<int,int>x2_min=make_pair(p.second.first.first,p.second.first.second),x2_max={p.second.second.first,p.second.second.second};
+        if(x1_max.first>x2_min.first && x1_min.first<x2_max.first && x1_max.second>x2_min.second && x1_min.second<x2_max.second)
+        flag=1;
+    }
+    if(flag==1)
+    return false;
+    return true;
 }
 int residueFunc(coords c, Box b,Solver* s){
     int r= 0;

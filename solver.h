@@ -14,7 +14,7 @@
 #define convertCoords(pt) pair<int,pair<int,pii>>(pt.box,pair<int,pii>(pt.x,pii(pt.y,pt.z)))
 using namespace std;
 
-
+bool check(const pair<pair<int,int>,pair<int,int>>&a, const pair<pair<int,int>,pair<int,int>>&b);
 class Solver;
 struct Box{
     int l,b,h,weight,cost,ID;bool isPriority;
@@ -46,9 +46,11 @@ public:
     vector<Box>data;
     coords def;
     vector<Uld>ULDl;
+    set<pair<int,pair<pair<int,int>,pair<int,int>>>>surfaces;
     Solver(Sorter sorter_, Merit merit_, vector<Box> boxes,vector<Uld> ULD_);
     int cost();
     bool checkCollision(coords e, Box b);
+    bool checkGravity(coords e, Box b);
     void solve();
     void update(int i);
     
@@ -63,6 +65,7 @@ public:
     coords beamprojectYPos(coords ob1);
     coords beamprojectXPos(coords ob1);
 
+    void addEP2(int i);
     void addEP(int i);
     void updateMaxBound(int i);
     void updateResidue(int i);
@@ -81,3 +84,4 @@ public:
     coords rayProjectYPos(coords start);
     coords rayProjectZPos(coords start);
 };
+int residueFunc(coords c, Box b,Solver* s);
