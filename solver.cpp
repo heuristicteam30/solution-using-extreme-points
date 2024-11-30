@@ -105,7 +105,7 @@ void Solver::solve()
                 e.x = x.first.second.first;
                 e.y = x.first.second.second.first;
                 e.z = x.first.second.second.second;
-                if (checkCollision(e, p))
+                if (checkCollision(e, p) || checkGravity(e,p))
                     continue;
                 p.isPriority = b.isPriority;
                 int score = this->merit.val(e, p, this);
@@ -532,16 +532,32 @@ coords Solver::rayProjectZPos(coords start)
 }
 bool Solver::checkGravity(coords e, Box b)
 {
+    // cout << surfaces.size();
+    if(e.z==0)
+    return false;
+    // return false;
     // sort(surfaces.begin(),surfaces.end());
-    auto start=surfaces.lower_bound(make_pair(e.z,make_pair(make_pair(0,0),make_pair(0,0))));
-    auto end=prev(surfaces.lower_bound(make_pair(e.z,make_pair(make_pair(3000,3000),make_pair(3000,3000)))));
-    pair<int,int>x1_min=make_pair(e.x,e.y),x1_max={e.x+b.l,e.x+b.b};
+    // auto start=surfaces.lower_bound(make_pair(e.z,make_pair(make_pair(0,0),make_pair(0,0))));
+    // auto end=surfaces.lower_bound(make_pair(e.z,make_pair(make_pair(3000,3000),make_pair(3000,3000))));
+    // for(auto x:surfaces)
+    // cout << x.first << " ";
+    // cout << "\n";
+    pair<int,int>x1_min=make_pair(e.x,e.y),x1_max={e.x+b.l,e.y+b.b};
     int flag=0;
-    for(auto i=start;i!=end;i++)
+    int c=0;
+    for(auto i:surfaces)
     {
-        if((*i).first!=e.z)
+        if((i).first!=e.z)
         continue;
-        pair<int,pair<pair<int,int>,pair<int,int>>>p=*i;
+        c++;
+    }
+    if(c==0)
+    return true;
+    for(auto i:surfaces)
+    {
+        if(i.first!=e.z)
+        continue;
+        pair<int,pair<pair<int,int>,pair<int,int>>>p=i;
         pair<int,int>x2_min=make_pair(p.second.first.first,p.second.first.second),x2_max={p.second.second.first,p.second.second.second};
         if(x1_max.first>x2_min.first && x1_min.first<x2_max.first && x1_max.second>x2_min.second && x1_min.second<x2_max.second)
         flag=1;
