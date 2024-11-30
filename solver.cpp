@@ -476,3 +476,12 @@ coords Solver::rayProjectZPos(coords start)
     start.z = max(start.z, x);
     return start;
 }
+int residueFunc(coords c, Box b,Solver* s){
+    int r= 0;
+    r+=s->ULDHasPriority[c.box]*100000000000*b.isPriority;
+    float relativeDifference =(s->ep[convertCoords(c)].first - b.l)/1.0/s->ep[convertCoords(c)].first+(s->ep[convertCoords(c)].second.first - b.b)/1.0/s->ep[convertCoords(c)].second.first+(s->ep[convertCoords(c)].second.second - b.h)/1.0/s->ep[convertCoords(c)].second.second;
+    relativeDifference*=1000000;
+//    float relativeDifference =(s->ep[convertCoords(c)].first - b.l)+(s->ep[convertCoords(c)].second.first - b.b)+(s->ep[convertCoords(c)].second.second - b.h);
+    r+=relativeDifference;
+    return r;
+}
