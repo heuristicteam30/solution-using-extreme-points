@@ -14,6 +14,7 @@
 #define PRIORITY_ULD_COST 5000
 #define RESIDUE_THRESHOLD 0
 #define convertCoords(pt) pair<int,pair<int,pii>>(pt.box,pair<int,pii>(pt.x,pii(pt.y,pt.z)))
+using namespace std;
 class Solver;
 struct Box{
     int l,b,h,weight,cost,ID;bool isPriority;
@@ -50,9 +51,9 @@ public:
         //        this->merit.init(this);
         //        this->sorter.init(this);
         this->data = boxes;
-        def.x = def.y = def.z=def.box  -1;
+        def.x = def.y = def.z=def.box = -1;
         Box def_;def_.l = def_.b = def_.h=  -1;
-        this->placement.assign(boxes.size(), pair<coords,Box>(def,def_));
+        placement.assign(boxes.size(), pair<coords,Box>(def,def_));
         ULDl = ULD_;
         ULDPackages.assign(ULDl.size(), set<int>());
     }
@@ -64,12 +65,12 @@ public:
                 c-=data[i].cost;
                 if(data[i].isPriority)c-=NON_PRIORITY_COST;
             }else{
-                c+=data[i].cost;
+//                c+=data[i].cost;
                 if(data[i].isPriority)priorityShipments.insert(placement[i].first.box);
             }
         }
-        c+=priorityShipments.size()*PRIORITY_ULD_COST;
-        For(i,ULDl.size())c+=abs(ULDl[i].dim.l/2-ULDl[i].com.x)+abs(ULDl[i].dim.b/2-ULDl[i].com.y)+abs(ULDl[i].dim.h/2-ULDl[i].com.z);
+        c-=priorityShipments.size()*PRIORITY_ULD_COST;
+//        For(i,ULDl.size())c-=abs(ULDl[i].dim.l/2-ULDl[i].com.x)+abs(ULDl[i].dim.b/2-ULDl[i].com.y)+abs(ULDl[i].dim.h/2-ULDl[i].com.z);
 //        cout<<c<<"\n";
         return c;
     }
@@ -115,6 +116,7 @@ public:
                 if(best.first<score)best = pair<int,pair<coords,Box>>(score,pair<coords,Box>(e,p));
             }
             //update vals
+            cout<<ep.size();
             if(best.first==-INF)continue;
             placement[i] = best.second;
             ULDPackages[best.second.first.box].insert(i);
@@ -844,7 +846,6 @@ void ParseULDs(const string &filename, vector<ULD> &ulds)
         cerr << "Error opening ULD file: " << filename << endl;
         return;
     }
-
     string line;
     int uld_id = 1;
     while (getline(infile, line))
@@ -860,7 +861,6 @@ void ParseULDs(const string &filename, vector<ULD> &ulds)
         Dimensions dim = {stoi(length), stoi(width), stoi(height)};
         ulds.emplace_back(dim, uld_id++, stoi(weight));
     }
-
     infile.close();
 }
 
@@ -997,9 +997,10 @@ void f(int __) {
 //    For(i,dat.size()){
 //        cout<<s.data[i].ID<<","<<s.placement[i].first.box+1<<","<<s.placement[i].first.x<<","<<s.placement[i].first.y<<","<<s.placement[i].first.z<<","<<s.placement[i].second.l+s.placement[i].first.x<<","<<s.placement[i].second.b+s.placement[i].first.y<<","<<s.placement[i].second.h+s.placement[i].first.z<<"\n";
 //    }
+//    cout<<s.cost();
     vector<Packet>pc;ParsePackets("/Users/agupta/Desktop/q/cpp/cpp/packageNormal.txt",pc);
     vector<struct ULD>u;ParseULDs("/Users/agupta/Desktop/q/cpp/cpp/ULDNormal.txt", u);
-    Genetic gen(u, pc);//    gen.Execute();
+    Genetic gen(u, pc);
     gen.Execute();
 }
 
