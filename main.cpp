@@ -51,7 +51,7 @@ public:
         //        this->merit.init(this);
         //        this->sorter.init(this);
         this->data = boxes;
-        def.x = def.y = def.z=def.box  -1;
+        def.x = def.y = def.z=def.box = -1;
         Box def_;def_.l = def_.b = def_.h=  -1;
         this->placement.assign(boxes.size(), pair<coords,Box>(def,def_));
         ULDl = ULD_;
