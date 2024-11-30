@@ -502,6 +502,7 @@ void f(int __) {
     Vol_Ht.val = [](Box a,Box b){
         if(b.isPriority and (not a.isPriority))return false;
         if(a.isPriority and (not b.isPriority))return true;
+        if(a.cost!=b.cost)return a.cost>b.cost;
         if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))>min(b.h,min(b.b,b.l));
         return a.l*a.b*a.h > b.l*b.b*b.h;
     };
