@@ -8,13 +8,12 @@
 #define max(a,b) (a>b?a:b)
 #define maxP(a,b) (a.first>b.first?a:b)
 #define min(a,b) (a<b?a:b)
-#define INF 100000000000
+#define INF 10000000000000000
 #define pii pair<int,int>
 #define NON_PRIORITY_COST 1000000
 #define PRIORITY_ULD_COST 5000
 #define RESIDUE_THRESHOLD 0
 #define convertCoords(pt) pair<int,pair<int,pii>>(pt.box,pair<int,pii>(pt.x,pii(pt.y,pt.z)))
-using namespace std;
 class Solver;
 struct Box{
     int l,b,h,weight,cost,ID;bool isPriority;
@@ -42,6 +41,7 @@ public:
     Merit merit;Sorter sorter;
     vector<pair<coords,Box>>placement;//(bottom left corner, dimensions)
     vector<set<int>>ULDPackages;//sees which package is placed in which ULD
+    vector<bool>ULDHasPriority;
     vector<Box>data;
     coords def;
     vector<Uld>ULDl;
@@ -51,11 +51,12 @@ public:
         //        this->merit.init(this);
         //        this->sorter.init(this);
         this->data = boxes;
-        def.x = def.y = def.z=def.box = -1;
+        def.x = def.y = def.z=def.box  -1;
         Box def_;def_.l = def_.b = def_.h=  -1;
-        placement.assign(boxes.size(), pair<coords,Box>(def,def_));
+        this->placement.assign(boxes.size(), pair<coords,Box>(def,def_));
         ULDl = ULD_;
         ULDPackages.assign(ULDl.size(), set<int>());
+        ULDHasPriority.assign(ULDl.size(), false);
     }
     int cost(){
         int c=0;
@@ -63,9 +64,12 @@ public:
         For(i,data.size()){
             if(placement[i].first.x==-1){
                 c-=data[i].cost;
-                if(data[i].isPriority)c-=NON_PRIORITY_COST;
+                if(data[i].isPriority){
+                    c-=NON_PRIORITY_COST;
+                }
             }else{
 //                c+=data[i].cost;
+                
                 if(data[i].isPriority)priorityShipments.insert(placement[i].first.box);
             }
         }
@@ -84,7 +88,7 @@ public:
         return false;
     }
     void solve(){
-//        sort(data.begin(),data.end(),this->sorter.val);
+        sort(data.begin(),data.end(),this->sorter.val);
         For(i,ULDl.size())ep[pair<int,pair<int,pii>>(i,pair<int, pii>(0,pii(0,0)))] = pair<int, pii>(ULDl[i].dim.l,pii(ULDl[i].dim.b,ULDl[i].dim.h));
         For(i,data.size()){
             Box b = data[i];
@@ -116,8 +120,8 @@ public:
                 if(best.first<score)best = pair<int,pair<coords,Box>>(score,pair<coords,Box>(e,p));
             }
             //update vals
-            cout<<ep.size();
             if(best.first==-INF)continue;
+            if(data[i].isPriority)ULDHasPriority[best.second.first.box]=true;
             placement[i] = best.second;
             ULDPackages[best.second.first.box].insert(i);
             addEP(i);
@@ -448,7 +452,11 @@ public:
 #define SPREAD_COST 5000
 #define BEST_K_SOLNS 3
 int residueFunc(coords c, Box b,Solver* s){
-    return s->ep[convertCoords(c)].first - b.l+s->ep[convertCoords(c)].second.first - b.b+s->ep[convertCoords(c)].second.second - b.h;
+    int r= 0;
+//    r-=s->ULDHasPriority[c.box]*100000000000;
+    float relativeDifference =(s->ep[convertCoords(c)].first - b.l)/1.0/s->ep[convertCoords(c)].first+(s->ep[convertCoords(c)].second.first - b.b)/1.0/s->ep[convertCoords(c)].second.first+(s->ep[convertCoords(c)].second.second - b.h)/1.0/s->ep[convertCoords(c)].second.second;
+    r+=relativeDifference*1000000;
+    return r;
 }
 struct Dimensions
 {
@@ -593,7 +601,6 @@ private:
             }
             population[i].fitness = FitnessFunction(population[i]);
         }
-
         vector<int> indices(factor * population_size);
 
         iota(indices.begin(), indices.end(), 0);
@@ -846,6 +853,7 @@ void ParseULDs(const string &filename, vector<ULD> &ulds)
         cerr << "Error opening ULD file: " << filename << endl;
         return;
     }
+
     string line;
     int uld_id = 1;
     while (getline(infile, line))
@@ -861,6 +869,7 @@ void ParseULDs(const string &filename, vector<ULD> &ulds)
         Dimensions dim = {stoi(length), stoi(width), stoi(height)};
         ulds.emplace_back(dim, uld_id++, stoi(weight));
     }
+
     infile.close();
 }
 
@@ -915,7 +924,7 @@ void ParsePackets(const string &filename, vector<Packet> &packets)
 using namespace std;
 vector<Uld> ULDList(6);
 vector<Box>dat(400);
-const int LevelXYBoundWeight  =2;
+const int LevelXYBoundWeight  =10;
 void f(int __) {
     Sorter Vol_Ht;
     Vol_Ht.val = [](Box a,Box b){
@@ -992,16 +1001,26 @@ void f(int __) {
         dat[i].isPriority = s=="Priority";
         cin>>dat[i].cost;
     }
-//    Solver s(Vol_Ht, Residue, dat, ULDList);
-//    s.solve();
-//    For(i,dat.size()){
-//        cout<<s.data[i].ID<<","<<s.placement[i].first.box+1<<","<<s.placement[i].first.x<<","<<s.placement[i].first.y<<","<<s.placement[i].first.z<<","<<s.placement[i].second.l+s.placement[i].first.x<<","<<s.placement[i].second.b+s.placement[i].first.y<<","<<s.placement[i].second.h+s.placement[i].first.z<<"\n";
-//    }
-//    cout<<s.cost();
-    vector<Packet>pc;ParsePackets("/Users/agupta/Desktop/q/cpp/cpp/packageNormal.txt",pc);
-    vector<struct ULD>u;ParseULDs("/Users/agupta/Desktop/q/cpp/cpp/ULDNormal.txt", u);
-    Genetic gen(u, pc);
-    gen.Execute();
+    Solver s(Vol_Ht, Residue, dat, ULDList);
+    s.solve();
+    For(i,dat.size()){
+        cout<<s.data[i].ID<<","<<s.placement[i].first.box+1<<","<<s.placement[i].first.x<<","<<s.placement[i].first.y<<","<<s.placement[i].first.z<<","<<s.placement[i].second.l+s.placement[i].first.x<<","<<s.placement[i].second.b+s.placement[i].first.y<<","<<s.placement[i].second.h+s.placement[i].first.z<<"\n";
+    }
+    int usedVol = 0, ULDVol =0;
+    For(i,s.ULDl.size()){
+        int vol =0;
+        for(int b:s.ULDPackages[i])vol+=s.data[b].l*s.data[b].b*s.data[b].h;
+//        cout<<1.0*vol/s.ULDl[i].dim.l/s.ULDl[i].dim.b/s.ULDl[i].dim.h<<"\n";
+        usedVol+=vol;
+        ULDVol+=s.ULDl[i].dim.l*s.ULDl[i].dim.b*s.ULDl[i].dim.h;
+    }
+    cout<<1.0*usedVol/ULDVol<<"\n";
+    cout<<s.cost()<<"\n";
+    
+//    vector<Packet>pc;ParsePackets("/Users/agupta/Desktop/q/cpp/cpp/packageNormal.txt",pc);
+//    vector<struct ULD>u;ParseULDs("/Users/agupta/Desktop/q/cpp/cpp/ULDNormal.txt", u);
+//    Genetic gen(u, pc);//    gen.Execute();
+//    gen.Execute();
 }
 
 signed main(){
