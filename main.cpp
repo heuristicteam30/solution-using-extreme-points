@@ -552,14 +552,14 @@ void f(int __) {
     Residue.val = residueFunc;
     
     ULDList[0].dim.l = 224; ULDList[0].dim.b= 318; ULDList[0].dim.h = 162;ULDList[0].weight = 100;ULDList[0].maxBound.x =ULDList[0].maxBound.y=ULDList[0].maxBound.z = 0;
-    freopen("/Users/agupta/Desktop/q/cpp/cpp/ULD.in", "r" , stdin);
+    freopen("ULD.in", "r" , stdin);
     For(i,ULDList.size()){
         ULDList[i].weight=0;
         cin>>ULDList[i].dim.l>>ULDList[i].dim.b>>ULDList[i].dim.h>>ULDList[i].maxWt;ULDList[i].maxBound.x =ULDList[i].maxBound.y=ULDList[i].maxBound.z = 0;
         ULDList[i].com.x = ULDList[i].dim.l/2;ULDList[i].com.y = ULDList[i].dim.b/2;ULDList[i].com.z = ULDList[i].dim.h/2;
     }
 //    freopen("/Users/agupta/Desktop/q/cpp/cpp/outpus.out", " gw" , stdout);
-    freopen("/Users/agupta/Desktop/q/cpp/cpp/package.in", "r" , stdin);
+    freopen("package.in", "r" , stdin);
 //    For(i,2)dat[i].l =dat[i].b =dat[i].h = i+1;
 //    dat[0].l = 99; dat[0].b= 53; dat[0].h = 55;
 //    dat[1].l = 56; dat[1].b= 99; dat[1].h = 81;
@@ -584,8 +584,16 @@ void f(int __) {
     }
     Solver s(Vol_Ht, Residue, dat, ULDList);
     s.solve();
+    cout.flush();
+    freopen("result.csv", "w" , stdout);
     For(i,dat.size()){
-        cout<<s.data[i].ID<<","<<s.placement[i].first.box+1<<","<<s.placement[i].first.x<<","<<s.placement[i].first.y<<","<<s.placement[i].first.z<<","<<s.placement[i].second.l+s.placement[i].first.x<<","<<s.placement[i].second.b+s.placement[i].first.y<<","<<s.placement[i].second.h+s.placement[i].first.z<<"\n";
+        if(s.placement[i].first.x == -1){
+            cout << "P-"<<s.data[i].ID<<",None,-1,-1,-1,-1,-1,-1\n";
+        }
+        else{
+            cout << "P-"<<s.data[i].ID<<",U"<<s.placement[i].first.box+1<<","<<s.placement[i].first.x<<","<<s.placement[i].first.y<<","<<s.placement[i].first.z<<","<<s.placement[i].second.l+s.placement[i].first.x<<","<<s.placement[i].second.b+s.placement[i].first.y<<","<<s.placement[i].second.h+s.placement[i].first.z<<"\n";
+        }
+        // cout<<s.data[i].ID<<","<<s.placement[i].first.box+1<<","<<s.placement[i].first.x<<","<<s.placement[i].first.y<<","<<s.placement[i].first.z<<","<<s.placement[i].second.l+s.placement[i].first.x<<","<<s.placement[i].second.b+s.placement[i].first.y<<","<<s.placement[i].second.h+s.placement[i].first.z<<"\n";
     }
     int usedVol = 0, ULDVol =0;
     For(i,s.ULDl.size()){
