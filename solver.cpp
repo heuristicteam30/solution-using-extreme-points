@@ -70,7 +70,9 @@ bool Solver::checkCollision(coords e, Box b)
 
 void Solver::solve()
 {
-    // sort(data.begin(), data.end(), this->sorter.val);
+    #ifndef GENETIC
+    sort(data.begin(), data.end(), this->sorter.val);
+    #endif
     For(i, ULDl.size()) ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
     For(i, data.size())
     {

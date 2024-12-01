@@ -12,6 +12,8 @@
 #define PRIORITY_ULD_COST 5000
 #define RESIDUE_THRESHOLD 0
 #define convertCoords(pt) pair<int,pair<int,pii>>(pt.box,pair<int,pii>(pt.x,pii(pt.y,pt.z)))
+
+#define GENETIC
 using namespace std;
 
 bool check(const pair<pair<int,int>,pair<int,int>>&a, const pair<pair<int,int>,pair<int,int>>&b);

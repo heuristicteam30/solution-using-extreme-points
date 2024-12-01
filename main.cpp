@@ -30,7 +30,6 @@
 #define SPREAD_COST 5000
 #define BEST_K_SOLNS 3
 
-#define GENETIC
 struct Dimensions
 {
     int length, width, height;
