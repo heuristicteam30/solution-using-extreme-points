@@ -46,11 +46,12 @@ public:
     vector<Box>data;
     coords def;
     vector<Uld>ULDl;
-    set<pair<int,pair<pair<int,int>,pair<int,int>>>>surfaces;
+    vector<set<pair<int,pair<pair<int,int>,pair<int,int>>>>>surfaces;
     Solver(Sorter sorter_, Merit merit_, vector<Box> boxes,vector<Uld> ULD_);
     int cost();
     bool checkCollision(coords e, Box b);
     bool checkGravity(coords e, Box b);
+    void gravity_pull(int i);
     void solve();
     void update(int i);
     

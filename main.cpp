@@ -502,6 +502,7 @@ void f(int __) {
     Vol_Ht.val = [](Box a,Box b){
         if(b.isPriority and (not a.isPriority))return false;
         if(a.isPriority and (not b.isPriority))return true;
+        // if(a.isPriority and b.isPriority)return false;
         if(a.cost!=b.cost)return a.cost>b.cost;
         if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))>min(b.h,min(b.b,b.l));
         return a.l*a.b*a.h > b.l*b.b*b.h;
@@ -578,12 +579,17 @@ void f(int __) {
     s.solve();
     cout.flush();
     freopen("result.csv", "w" , stdout);
+    int count=0;
     For(i,dat.size()){
+        // if(dat[i].isPriority)
+        // count1++;
+        // maxecocost=max(maxecocost,dat[i].cost);
         if(s.placement[i].first.x == -1){
             cout << "P-"<<s.data[i].ID<<",None,-1,-1,-1,-1,-1,-1\n";
         }
         else{
             cout << "P-"<<s.data[i].ID<<",U"<<s.placement[i].first.box+1<<","<<s.placement[i].first.x<<","<<s.placement[i].first.y<<","<<s.placement[i].first.z<<","<<s.placement[i].second.l+s.placement[i].first.x<<","<<s.placement[i].second.b+s.placement[i].first.y<<","<<s.placement[i].second.h+s.placement[i].first.z<<"\n";
+            count++;
         }
         // cout<<s.data[i].ID<<","<<s.placement[i].first.box+1<<","<<s.placement[i].first.x<<","<<s.placement[i].first.y<<","<<s.placement[i].first.z<<","<<s.placement[i].second.l+s.placement[i].first.x<<","<<s.placement[i].second.b+s.placement[i].first.y<<","<<s.placement[i].second.h+s.placement[i].first.z<<"\n";
     }
@@ -595,9 +601,9 @@ void f(int __) {
         usedVol+=vol;
         ULDVol+=s.ULDl[i].dim.l*s.ULDl[i].dim.b*s.ULDl[i].dim.h;
     }
-    cout<<1.0*usedVol/ULDVol<<"\n";
-    cout<<s.cost()<<"\n";
-    
+    cout<<"Packing Efficiency:" << 1.0*usedVol/ULDVol<<"\n";
+    cout<<"Cost:" << s.cost()<<"\n";
+    cout << "Number of packages loaded:" << count << "\n";
 //    vector<Packet>pc;ParsePackets("/Users/agupta/Desktop/q/cpp/cpp/packageNormal.txt",pc);
 //    vector<struct ULD>u;ParseULDs("/Users/agupta/Desktop/q/cpp/cpp/ULDNormal.txt", u);
 //    Genetic gen(u, pc);//    gen.Execute();
