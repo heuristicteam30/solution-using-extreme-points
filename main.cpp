@@ -30,6 +30,7 @@
 #define SPREAD_COST 5000
 #define BEST_K_SOLNS 3
 
+#define GENETIC
 struct Dimensions
 {
     int length, width, height;
@@ -498,6 +499,7 @@ vector<Uld> ULDList(6);
 vector<Box>dat(400);
 const int LevelXYBoundWeight  =10;
 void f(int __) {
+    #ifndef GENETIC
     Sorter Vol_Ht;
     Vol_Ht.val = [](Box a,Box b){
         if(b.isPriority and (not a.isPriority))return false;
@@ -597,11 +599,13 @@ void f(int __) {
     }
     cout<<1.0*usedVol/ULDVol<<"\n";
     cout<<s.cost()<<"\n";
-    
-//    vector<Packet>pc;ParsePackets("/Users/agupta/Desktop/q/cpp/cpp/packageNormal.txt",pc);
-//    vector<struct ULD>u;ParseULDs("/Users/agupta/Desktop/q/cpp/cpp/ULDNormal.txt", u);
-//    Genetic gen(u, pc);//    gen.Execute();
-//    gen.Execute();
+    #endif
+    #ifdef GENETIC
+    vector<Packet>pc;ParsePackets("packageNormal.txt",pc);
+    vector<struct ULD>u;ParseULDs("ULDNormal.txt", u);
+    Genetic gen(u, pc);//    gen.Execute();
+    gen.Execute();
+    #endif
 }
 
 signed main(){
