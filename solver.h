@@ -48,9 +48,29 @@ public:
     coords def;
     vector<Uld>ULDl;
     vector<set<pair<int,pair<pair<int,int>,pair<int,int>>>>>surfaces;
+
+    // data structures for additional EP creation
+    function<bool(const int&, const int&)> compare_x;
+    function<bool(const int&, const int&)> compare_y;   
+    function<bool(const int&, const int&)> compare_z;
+
+    vector<set<int, function<bool(const int&, const int&)>>> ULD_sorted_x;
+    vector<set<int, function<bool(const int&, const int&)>>> ULD_sorted_y;
+    vector<set<int, function<bool(const int&, const int&)>>> ULD_sorted_z;
+
+    function<bool(const int&, const int&)> compare_x_base;
+    function<bool(const int&, const int&)> compare_y_base;
+    function<bool(const int&, const int&)> compare_z_base;
+    
+    set<int, function<bool(const int&, const int&)>> ULD_blocking_boxes_x;
+    set<int, function<bool(const int&, const int&)>> ULD_blocking_boxes_y;
+    set<int, function<bool(const int&, const int&)>> ULD_blocking_boxes_z;
+    
+    // Constructor
     Solver(Sorter sorter_, Merit merit_, vector<Box> boxes,vector<Uld> ULD_);
     int cost();
     bool checkCollision(coords e, Box b);
+    bool check_collision_2D(int x1_min, int x1_max, int y1_min, int y1_max, int x2_min, int x2_max, int y2_min, int y2_max);
     bool checkGravity(coords e, Box b);
     void gravity_pull(int i);
     virtual void solve();
@@ -79,6 +99,9 @@ public:
     int YRayIntersectionWithBox(coords start,int ind);
     int ZRayIntersectionWithBox(coords start,int ind);
 
+    void projection_neg_x_advanced(vector<coords> &advanced_eps, coords start, int self_pid);
+    void projection_neg_y_advanced(vector<coords> &advanced_eps, coords start, int self_pid);
+    void projection_neg_z_advanced(vector<coords> &advanced_eps, coords start, int self_pid);
     coords rayProjectXNeg(coords start);
     coords rayProjectYNeg(coords start);
     coords rayProjectZNeg(coords start);
