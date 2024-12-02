@@ -505,8 +505,15 @@ void f(int __) {
         if(a.isPriority and (not b.isPriority))return true;
         // if(a.isPriority and b.isPriority)return false;
         if(a.cost!=b.cost)return a.cost>b.cost;
-        if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))>min(b.h,min(b.b,b.l));
+        if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))<min(b.h,min(b.b,b.l));
         return a.l*a.b*a.h > b.l*b.b*b.h;
+    };
+    Sorter VolCost_Ht;
+    VolCost_Ht.val = [](Box a,Box b){
+        if(b.isPriority and (not a.isPriority))return false;
+        if(a.isPriority and (not b.isPriority))return true;
+        int vol = a.l*a.b*a.h, vol2 = b.l*b.b*b.h;
+        return a.cost*vol2 > b.cost*vol;
     };
     Sorter Ht_Vol;
     Ht_Vol.val = [](Box a,Box b){
@@ -576,7 +583,9 @@ void f(int __) {
         dat[i].isPriority = s=="Priority";
         cin>>dat[i].cost;
     }
-    Solver s(Vol_Ht, Residue, dat, ULDList);
+    // Solver s(Vol_Ht, Residue, dat, ULDList);
+    // s.solve();
+    ScoredSolver s(Vol_Ht, Residue, dat, ULDList, 100);
     s.solve();
     cout.flush();
     freopen("result.csv", "w" , stdout);

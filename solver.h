@@ -53,7 +53,7 @@ public:
     bool checkCollision(coords e, Box b);
     bool checkGravity(coords e, Box b);
     void gravity_pull(int i);
-    void solve();
+    virtual void solve();
     void update(int i);
     
     vector<coords> getCOM();
@@ -86,4 +86,38 @@ public:
     coords rayProjectYPos(coords start);
     coords rayProjectZPos(coords start);
 };
+
+/*
+*   Assumes that the IDs are incrementally available, use a map instead of vectors ahead if
+*   the IDs are not incrementally available.
+*   The implementation of the paper assumes that each box is packed into a bin and tries to find the minimum
+*   number of bins required. We often miss out on the packing of the box, how to handle that case is
+*   to be thought of ourselves.
+*   Also, all of these considerations are only for economy packages and not for priority packages.
+*/
+class ScoredSolver: public Solver{
+public:
+    int iterations = 10;
+    double alpha = 0.1, beta = 0.1;
+    vector<int> insertionOrder;
+    // map<int, Box*> boxMap;
+    vector<Uld> originalUldList;
+    vector<Box*> boxMap;
+    vector<double> score; /*Store the score correpsonding to each object.*/
+    vector<int> insertionCounter; /*Store how many times each ID has been introduced in a solution, and how many times it hasn't*/
+    vector<int> lastInsertion; /*Store the order of insertion in the last iteration. We store only economy packages for convenience*/
+    set<int> lastInsertionSet; /*Store the last insertion set for quick access*/
+    set<int> economyPackages; /*Store the economy packages IDs*/
+
+    ScoredSolver(Sorter sorter_, Merit merit_, vector<Box> boxes,vector<Uld> ULD_, int iterations_):Solver(sorter_, merit_, boxes, ULD_), iterations(iterations_), originalUldList(ULD_){
+        /*ID based indexing of both score and boxMap*/
+        insertionCounter.resize(boxes.size()+5);
+        score.resize(boxes.size()+5);
+        boxMap.resize(boxes.size()+100);
+    }
+    void solve() override;
+    void update_scores(int i);
+    void optimize(int _iter);
+};
+
 int residueFunc(coords c, Box b,Solver* s);
