@@ -2,6 +2,8 @@
 
 using namespace std;
 
+extern double weightz;
+
 bool check(const pair<pair<int,int>,pair<int,int>>&a, const pair<pair<int,int>,pair<int,int>>&b)
         {
             int p=a.second.second;
@@ -94,6 +96,7 @@ bool Solver::checkCollision(coords e, Box b)
 void Solver::solve()
 {
     // int c=0;
+    // cout << weightz << endl;
     #ifndef GENETIC
     sort(data.begin(), data.end(), this->sorter.val);
     #endif
@@ -410,7 +413,6 @@ void Solver::projection_neg_z_advanced(vector<coords> &advanced_eps, coords star
 void Solver::projection_neg_y_advanced(vector<coords> &advanced_eps, coords start, int self_pid){
     
         bool hit_bottom = true;
-        cout << ULD_sorted_y.size()  << " " << start.box << endl;
         for(auto i: ULD_sorted_y[start.box])
         {
             coords potential_ep;
@@ -953,7 +955,7 @@ void Solver:: gravity_pull(int i)
 //     // c+=1-checkGravity(placement[i].first,placement[i].second);
 // }
 
-double weightz = 0.2;
+// double weightz = 0.2;
 
 int residueFunc(coords c, Box b,Solver* s){
     int r= 0;

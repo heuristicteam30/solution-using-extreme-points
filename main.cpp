@@ -18,6 +18,9 @@
 using namespace std;
 vector<Uld> ULDList(6);
 vector<Box>dat(400);
+
+double weightz = 0.2;
+
 const int LevelXYBoundWeight  =10;
 void final_execution() {
     #ifndef GENETIC
@@ -111,35 +114,46 @@ void final_execution() {
 
     // Solve the packing problem
     // Solver s(Vol_Ht, Residue, dat, ULDList);
-    Solver s(Vol_Ht, Residue, dat, ULDList);
+    
     // s.solve();
     // ScoredSolver s(Vol_Ht, Residue, dat, ULDList, 100);
-    s.solve();
-
+    // s.solve();
+    int _iter = 10;
+    int CountPackages = 0, Cost = INF;
+    // vector<Box> original_dat = dat; 
     // Output results
-    freopen("result.csv", "w", stdout);
-    int CountPackages = 0, Cost = -s.cost();
-    set<int> ULDPackages;
+    // freopen("result.csv", "w", stdout);
+    // for(weightz = 0.0; weightz <= 10.0; weightz += 0.01){
+    for(weightz= 0.16; weightz == 0.16; weightz += 0.1){
+        Solver s(Vol_Ht, Residue, dat, ULDList);
+        s.solve();
+        cout << "Weightz: " << weightz << " gave me a cost of " << -s.cost() << endl;
+        cout.flush();
 
-    for (int i = 0; i < dat.size(); ++i) {
-        if (s.placement[i].first.x != -1) {
-            if (s.data[i].isPriority) 
-                ULDPackages.insert(s.placement[i].first.box);
-            CountPackages++;
-        }
-    }
-    cout << Cost << "," << CountPackages << "," << ULDPackages.size() << "\n";
+        freopen("30998_result.csv", "w", stdout);
+        if(-s.cost() <= Cost){
+            set<int> ULDPackages;
+            for (int i = 0; i < dat.size(); ++i) {
+                if (s.placement[i].first.x != -1) {
+                    if (s.data[i].isPriority)
+                        ULDPackages.insert(s.placement[i].first.box);
+                    CountPackages++;
+                }
+            }
+            cout << Cost << "," << CountPackages << "," << ULDPackages.size() << "\n";
 
-    for (int i = 0; i < dat.size(); ++i) {
-        if (s.placement[i].first.x == -1) {
-            cout << s.data[i].ID << ",NONE,-1,-1,-1,-1,-1,-1\n";
-        } else {
-            cout << s.data[i].ID << "," << s.placement[i].first.box + 1 << "," 
-                 << s.placement[i].first.x << "," << s.placement[i].first.y << "," 
-                 << s.placement[i].first.z << "," 
-                 << s.placement[i].second.l + s.placement[i].first.x << "," 
-                 << s.placement[i].second.b + s.placement[i].first.y << "," 
-                 << s.placement[i].second.h + s.placement[i].first.z << "\n";
+            for (int i = 0; i < dat.size(); ++i) {
+                if (s.placement[i].first.x == -1) {
+                    cout << "P-" << s.data[i].ID << ",NONE,-1,-1,-1,-1,-1,-1\n";
+                } else {
+                    cout << "P-" << s.data[i].ID << "," << "U" << s.placement[i].first.box + 1 << "," 
+                        << s.placement[i].first.x << "," << s.placement[i].first.y << "," 
+                        << s.placement[i].first.z << "," 
+                        << s.placement[i].second.l + s.placement[i].first.x << "," 
+                        << s.placement[i].second.b + s.placement[i].first.y << "," 
+                        << s.placement[i].second.h + s.placement[i].first.z << "\n";
+                }
+            }
         }
     }
 
