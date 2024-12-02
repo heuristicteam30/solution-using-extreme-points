@@ -21,21 +21,26 @@ vector<Box>dat(400);
 const int LevelXYBoundWeight  =10;
 void final_execution() {
     #ifndef GENETIC
-    // Define sorters for different criteria
-    Sorter Vol_Ht;  // Sort by volume and height
-    Vol_Ht.val = [](Box a, Box b) {
-        if (b.isPriority && !a.isPriority) return false;
-        if (a.isPriority && !b.isPriority) return true;
-        if (a.cost != b.cost) return a.cost > b.cost;
-        if (a.l * a.b * a.h == b.l * b.b * b.h) 
-            return min(a.h, min(a.b, a.l)) > min(b.h, min(b.b, b.l));
-        return a.l * a.b * a.h > b.l * b.b * b.h;
+    Sorter Vol_Ht;
+    Vol_Ht.val = [](Box a,Box b){
+        if(b.isPriority and (not a.isPriority))return false;
+        if(a.isPriority and (not b.isPriority))return true;
+        // if(a.isPriority and b.isPriority)return false;
+        if(a.cost!=b.cost)return a.cost>b.cost;
+        if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))<min(b.h,min(b.b,b.l));
+        return a.l*a.b*a.h > b.l*b.b*b.h;
     };
-
-    Sorter Ht_Vol;  // Sort by height, then by volume
-    Ht_Vol.val = [](Box a, Box b) {
-        if (a.h == b.h) return a.l * a.b * a.h > b.l * b.b * b.h;
-        return a.h > b.h;
+    Sorter VolCost_Ht;
+    VolCost_Ht.val = [](Box a,Box b){
+        if(b.isPriority and (not a.isPriority))return false;
+        if(a.isPriority and (not b.isPriority))return true;
+        int vol = a.l*a.b*a.h, vol2 = b.l*b.b*b.h;
+        return a.cost*vol2 > b.cost*vol;
+    };
+    Sorter Ht_Vol;
+    Ht_Vol.val = [](Box a,Box b){
+        if(a.h==b.h)return a.l*a.b*a.h > b.l*b.b*b.h;
+        return a.h>b.h;
     };
 
     Sorter Area_Ht;  // Sort by base area, then by height
@@ -105,7 +110,10 @@ void final_execution() {
     }
 
     // Solve the packing problem
-    Solver s(Vol_Ht, Residue, dat, ULDList);
+    // Solver s(Vol_Ht, Residue, dat, ULDList);
+    // Solver s(Vol_Ht, Residue, dat, ULDList);
+    // s.solve();
+    ScoredSolver s(Vol_Ht, Residue, dat, ULDList, 100);
     s.solve();
 
     // Output results

@@ -633,3 +633,258 @@ int residueFunc(coords c, Box b,Solver* s){
     r+=relativeDifference;
     return r;
 }
+
+
+void ScoredSolver::solve(){
+    // Initial Solve
+    insertionCounter.assign(data.size()+5, 0);
+    #ifndef GENETIC
+    sort(data.begin(), data.end(), this->sorter.val);
+    #endif
+    For(i, ULDl.size()) ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
+    For(i, data.size())
+    {
+        // Construct Economy Package and Box Map
+        if(!data[i].isPriority){
+            boxMap[data[i].ID] = &data[i];
+            economyPackages.insert(data[i].ID);
+        }
+
+        Box b = data[i];
+        pair<int, pair<coords, Box>> best;
+        best.first = -INF;
+        vector<Box> perms(6);
+        perms[0].l = b.l;
+        perms[0].b = b.b;
+        perms[0].h = b.h; 
+        perms[1].l = b.l;
+        perms[1].h = b.b;
+        perms[1].b = b.h;
+        perms[2].l = b.b;
+        perms[2].b = b.l;
+        perms[2].h = b.h;
+        perms[3].l = b.b;
+        perms[3].b = b.h;
+        perms[3].h = b.l;
+        perms[4].l = b.h;
+        perms[4].b = b.b;
+        perms[4].h = b.l;
+        perms[5].l = b.h;
+        perms[5].b = b.l;
+        perms[5].h = b.b;
+        for (Box p : perms)
+            for (auto x : ep)
+            {
+                // check if it can fit
+                coords e;
+                e.box = x.first.first;
+                e.x = x.first.second.first;
+                e.y = x.first.second.second.first;
+                e.z = x.first.second.second.second;
+                if(checkCollision(e,p))
+                    continue;
+                p.isPriority = b.isPriority;
+                int score = this->merit.val(e, p, this);
+                if (best.first < score)
+                    best = pair<int, pair<coords, Box>>(score, pair<coords, Box>(e, p));
+            }
+        // update vals
+        if (best.first == -INF)
+            continue;
+        cout << insertionCounter.size() << " " << data[i].ID << endl;
+        cout.flush();
+        insertionCounter[data[i].ID]+=1;
+        if (data[i].isPriority){
+            ULDHasPriority[best.second.first.box] = true;
+        }
+        else{
+            lastInsertionSet.insert(data[i].ID);
+            lastInsertion.push_back(data[i].ID);
+        }
+        placement[i] = best.second;
+        ULDPackages[best.second.first.box].insert(i);
+        // int pp=placement[i].first.z;
+        gravity_pull(i);
+        // if(pp!=placement[i].first.z)
+        // c++;
+        addEP(i);
+        update(i);
+        // if(placement[i].second==data[i])
+        // if(checkGravity(placement[i].first, placement[i].second))
+        // printf("error\n");
+    }
+
+    // Initialising the scores
+    for(auto i: economyPackages){
+        if(lastInsertionSet.find(i) == lastInsertionSet.end()){
+            score[i] = 3.0*boxMap[i]->cost;
+        }
+        else{
+            score[i] = boxMap[i]->cost;
+        }
+    }
+    for(int i = 1; i <= iterations; i++){
+        cout << "Iteration " << i << " started" << endl;
+        cout.flush();
+        update_scores(i);
+        optimize(i);
+        cout << "Iteration " << i << " had a cost " << this->cost() << endl;
+    }
+    
+
+
+
+
+    
+}
+
+/*
+* i = number of iterations completed
+*/
+void ScoredSolver::update_scores(int i){
+    
+    pair<double, int> worst_loaded = {100000000.0, -1}, best_unloaded = {0.0, -1};
+    for(auto id : economyPackages){
+        if(lastInsertionSet.find(id) == lastInsertionSet.end()){
+            double theta = (1.0*boxMap[id]->cost)/(boxMap[id]->l * boxMap[id]->b * boxMap[id]->h * (1+i-insertionCounter[id]));
+            // cout << "Theta: "<< theta << " " << id << endl;
+            if(theta > best_unloaded.first){
+                best_unloaded = {theta, id};
+            }
+
+        }
+        else{
+            double myu = (1.0*boxMap[id]->cost)/(boxMap[id]->l * boxMap[id]->b * boxMap[id]->h * (1+insertionCounter[id]));
+            if(myu < worst_loaded.first){
+                worst_loaded = {myu, id};
+            }
+        }
+    }
+    // Found highest myu and theta
+    // cout << "Reached here" << endl;
+    // cout.flush();
+    if(worst_loaded.second != -1 && best_unloaded.second != -1){
+        score[worst_loaded.second] *= (1-alpha);
+        score[best_unloaded.second] *= (1+beta);
+        
+        cout << "Score of "<< best_unloaded.second << ":" << score[best_unloaded.second] << endl;
+        swap(score[worst_loaded.second], score[best_unloaded.second]);
+        cout << "Swapped " << worst_loaded.second << " and " << best_unloaded.second << "\n";
+        cout << "Score of "<< best_unloaded.second << ":" << score[best_unloaded.second] << endl;
+    }
+    else{
+        cout << "No possible swaps " << worst_loaded.second << " " << best_unloaded.second << endl;
+        return;
+    }
+}
+
+void ScoredSolver::optimize(int _iter){
+    // Re-Setup the solver
+    placement.clear();
+    ULDPackages.clear();
+    surfaces.clear();
+    ULDHasPriority.clear();
+    lastInsertion.clear();
+    def.x = def.y = def.z = def.box = -1;
+    Box def_;
+    def_.l = def_.b = def_.h = -1;
+    ULDl = this->originalUldList;
+    placement.assign(data.size(), pair<coords, Box>(def, def_));
+    ULDPackages.assign(ULDl.size(), set<int>());
+    surfaces.assign(ULDl.size(), set<pair<int,pair<pair<int,int>,pair<int,int>>>>());
+    ULDHasPriority.assign(ULDl.size(), false);
+    
+
+
+    
+    sort(data.begin(), data.end(), [&](Box a, Box b){
+        if (a.isPriority && !b.isPriority)
+            return true;
+        if (!a.isPriority && b.isPriority)
+            return false;
+        if(score[a.ID]!=score[b.ID])return score[a.ID]>score[b.ID];
+        if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))<min(b.h,min(b.b,b.l));
+        return a.l*a.b*a.h > b.l*b.b*b.h;
+    });
+    cout << "Data ordering:" << endl;
+    for(auto it: data){
+        cout << it.ID << "," << score[it.ID] << " ";
+        // cout << it.ID << " ";
+    }
+    cout << endl;
+    For(i, ULDl.size()) ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
+    For(i, data.size())
+    {
+        // Construct Economy Package and Box Map
+        Box b = data[i];
+        pair<int, pair<coords, Box>> best;
+        best.first = -INF;
+        vector<Box> perms(6);
+        perms[0].l = b.l;
+        perms[0].b = b.b;
+        perms[0].h = b.h; 
+        perms[1].l = b.l;
+        perms[1].h = b.b;
+        perms[1].b = b.h;
+        perms[2].l = b.b;
+        perms[2].b = b.l;
+        perms[2].h = b.h;
+        perms[3].l = b.b;
+        perms[3].b = b.h;
+        perms[3].h = b.l;
+        perms[4].l = b.h;
+        perms[4].b = b.b;
+        perms[4].h = b.l;
+        perms[5].l = b.h;
+        perms[5].b = b.l;
+        perms[5].h = b.b;
+        for (Box p : perms)
+            for (auto x : ep)
+            {
+                // check if it can fit
+                coords e;
+                e.box = x.first.first;
+                e.x = x.first.second.first;
+                e.y = x.first.second.second.first;
+                e.z = x.first.second.second.second;
+                if(checkCollision(e,p))
+                    continue;
+                p.isPriority = b.isPriority;
+                int scores = this->merit.val(e, p, this);
+                if (best.first < scores)
+                    best = pair<int, pair<coords, Box>>(scores, pair<coords, Box>(e, p));
+            }
+        // update vals
+        if (best.first == -INF)
+            continue;
+        insertionCounter[data[i].ID]+=1;
+        if (data[i].isPriority){
+            ULDHasPriority[best.second.first.box] = true;
+        }
+        else{
+            lastInsertionSet.insert(data[i].ID);
+            lastInsertion.push_back(data[i].ID);
+        }
+        placement[i] = best.second;
+        ULDPackages[best.second.first.box].insert(i);
+        // int pp=placement[i].first.z;
+        gravity_pull(i);
+        // if(pp!=placement[i].first.z)
+        // c++;
+        addEP(i);
+        update(i);
+        // if(placement[i].second==data[i])
+        // if(checkGravity(placement[i].first, placement[i].second))
+        // printf("error\n");
+    }
+
+    // Initialising the scores
+    // for(auto i: economyPackages){
+    //     if(lastInsertionSet.find(i) == lastInsertionSet.end()){
+    //         score[i] = 3*boxMap[i]->cost;
+    //     }
+    //     else{
+    //         score[i] = boxMap[i]->cost;
+    //     }
+    // }
+}
