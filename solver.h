@@ -11,7 +11,7 @@
 #define NON_PRIORITY_COST 1000000
 #define PRIORITY_ULD_COST 5000
 #define RESIDUE_THRESHOLD 0
-#define weightz 0.2
+// #define weightz 0.2
 #define convertCoords(pt) pair<int,pair<int,pii>>(pt.box,pair<int,pii>(pt.x,pii(pt.y,pt.z)))
 using namespace std;
 

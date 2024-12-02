@@ -111,9 +111,9 @@ void final_execution() {
 
     // Solve the packing problem
     // Solver s(Vol_Ht, Residue, dat, ULDList);
-    // Solver s(Vol_Ht, Residue, dat, ULDList);
+    Solver s(Vol_Ht, Residue, dat, ULDList);
     // s.solve();
-    ScoredSolver s(Vol_Ht, Residue, dat, ULDList, 100);
+    // ScoredSolver s(Vol_Ht, Residue, dat, ULDList, 100);
     s.solve();
 
     // Output results

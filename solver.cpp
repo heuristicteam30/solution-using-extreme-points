@@ -152,7 +152,8 @@ void Solver::solve()
         gravity_pull(i);
         // if(pp!=placement[i].first.z)
         // c++;
-        addEP(i);
+        // addEP(i);
+        addEP2(i);
         update(i);
         // if(placement[i].second==data[i])
         // if(checkGravity(placement[i].first, placement[i].second))
@@ -409,6 +410,7 @@ void Solver::projection_neg_z_advanced(vector<coords> &advanced_eps, coords star
 void Solver::projection_neg_y_advanced(vector<coords> &advanced_eps, coords start, int self_pid){
     
         bool hit_bottom = true;
+        cout << ULD_sorted_y.size()  << " " << start.box << endl;
         for(auto i: ULD_sorted_y[start.box])
         {
             coords potential_ep;
@@ -626,7 +628,7 @@ void Solver::addEP2(int i)
 
     coords ob1, ob2, ob3;
     auto p = placement[i];
-    p.first = def;
+    // p.first = def;
     int uid = p.first.box;
     ob1.box = uid;
     ob1.x = p.first.x;
@@ -951,6 +953,8 @@ void Solver:: gravity_pull(int i)
 //     // c+=1-checkGravity(placement[i].first,placement[i].second);
 // }
 
+double weightz = 0.2;
+
 int residueFunc(coords c, Box b,Solver* s){
     int r= 0;
     r+=(1LL*(s->ULDHasPriority[c.box])*100000000000LL)*b.isPriority;
@@ -1034,7 +1038,8 @@ void ScoredSolver::solve(){
         gravity_pull(i);
         // if(pp!=placement[i].first.z)
         // c++;
-        addEP(i);
+        addEP2(i);
+        // addEP(i);
         update(i);
         // if(placement[i].second==data[i])
         // if(checkGravity(placement[i].first, placement[i].second))
