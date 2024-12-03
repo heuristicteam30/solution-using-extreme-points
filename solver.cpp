@@ -129,6 +129,12 @@ bool Solver::checkCollision(coords e, Box b)
     if (e.x + b.l >= ULDl[e.box].dim.l or e.y + b.b >= ULDl[e.box].dim.b or e.z + b.h >= ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
         return true;
 
+    // check if the box dimensions exceed the Residual Space
+    auto r = ep[convertCoords(e)];
+    if(r.first < b.l) return true;
+    if(r.second.first < b.b) return true;
+    if(r.second.second < b.h) return true;
+
     // check collision of the given packages with all other packages of same ULD
     for (auto i : ULDPackages[e.box])
     {
