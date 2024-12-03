@@ -6,7 +6,7 @@ vector<Uld> ULDList(6);
 vector<Box>dat(400);
 
 double weightz = 0.2;
-double power_fac = 1.0;
+double power_fac = 3.75;
 
 const int LevelXYBoundWeight  =10;
 void final_execution() {
@@ -159,7 +159,7 @@ void final_execution() {
     // s.solve();
     int _iter = 10;
     int CountPackages = 0, Cost = INF;
-    double weightz_min = 0.07, power_fac_min = 1.0;
+    double weightz_min = 0.2, power_fac_min = 3.75;
     // vector<Box> original_dat = dat; 
     // Output results
     // freopen("result.csv", "w", stdout);

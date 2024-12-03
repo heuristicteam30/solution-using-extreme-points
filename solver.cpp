@@ -1,4 +1,17 @@
 #include "solver.h"
+#define int long long
+#define For(i,n) for(int i=0; i<n;i++)
+#define FOR(k,i,n) for(int i=k; i<n;i++)
+#define vi vector<int>
+#define max(a,b) (a>b?a:b)
+#define maxP(a,b) (a.first>b.first?a:b)
+#define min(a,b) (a<b?a:b)
+#define INF 10000000000000000
+#define pii pair<int,int>
+#define NON_PRIORITY_COST 1000000
+#define PRIORITY_ULD_COST 5000
+#define RESIDUE_THRESHOLD 0
+#define convertCoords(pt) pair<int,pair<int,pii>>(pt.box,pair<int,pii>(pt.x,pii(pt.y,pt.z)))
 
 using namespace std;
 
@@ -98,7 +111,8 @@ int Solver::cost()
 bool Solver::checkCollision(coords e, Box b)
 {
     // checks collision of prespective packages with all other packages of same ULD along with weight constraint of the ULD
-    if (e.x + b.l > ULDl[e.box].dim.l or e.y + b.b > ULDl[e.box].dim.b or e.z + b.h >         ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
+    // if (e.x + b.l > ULDl[e.box].dim.l or e.y + b.b > ULDl[e.box].dim.b or e.z + b.h >         ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
+    if (e.x + b.l >= ULDl[e.box].dim.l or e.y + b.b >= ULDl[e.box].dim.b or e.z + b.h >=        ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
         return true;
     
     // check collision of the given packages with all other packages of same ULD
@@ -954,25 +968,39 @@ bool Solver::checkGravity(coords e, Box b)
 
     return true; // No overlap, gravity applies
 }
-void Solver::gravity_pull(int i)
+void Solver:: gravity_pull(int i)
 {
-    auto x1_min = make_pair(placement[i].first.x, placement[i].first.y);
-    auto x1_max = make_pair(placement[i].first.x + placement[i].second.l, placement[i].first.y + placement[i].second.b);
-
-    int m = 0;
-    // Find the maximum z-coordinate of overlapping surfaces below the current box
-
-    for (auto x : surfaces[placement[i].first.box])
+    pair<int,int>x1_min=make_pair(placement[i].first.x,placement[i].first.y),x1_max={placement[i].first.x+placement[i].second.l,placement[i].first.y+placement[i].second.b};
+    int m=0;
+    for(auto x:surfaces[placement[i].first.box])
     {
-        auto p = x;
-        auto x2_min = make_pair(p.second.first.first, p.second.first.second);
-        auto x2_max = make_pair(p.second.second.first, p.second.second.second);
+        pair<int,pair<pair<int,int>,pair<int,int>>>p=x;
+        pair<int,int>x2_min=make_pair(p.second.first.first,p.second.first.second),x2_max={p.second.second.first,p.second.second.second};
+        if(x1_max.first>x2_min.first && x1_min.first<x2_max.first && x1_max.second>x2_min.second && x1_min.second<x2_max.second && x.first<=placement[i].first.z)
+        m=max(m,x.first);
+    }
+    placement[i].first.z=m;
+}
 
-        // Check for overlap and ensure the surface is below the current z-coordinate
-        bool is_overlapping = x1_max.first > x2_min.first &&
-                              x1_min.first < x2_max.first &&
-                              x1_max.second > x2_min.second &&
-                              x1_min.second < x2_max.second;
+// void Solver::gravity_pull(int i)
+// {
+//     auto x1_min = make_pair(placement[i].first.x, placement[i].first.y);
+//     auto x1_max = make_pair(placement[i].first.x + placement[i].second.l, placement[i].first.y + placement[i].second.b);
+
+//     int m = 0;
+//     // Find the maximum z-coordinate of overlapping surfaces below the current box
+
+//     for (auto x : surfaces[placement[i].first.box])
+//     {
+//         auto p = x;
+//         auto x2_min = make_pair(p.second.first.first, p.second.first.second);
+//         auto x2_max = make_pair(p.second.second.first, p.second.second.second);
+
+//         // Check for overlap and ensure the surface is below the current z-coordinate
+//         bool is_overlapping = x1_max.first > x2_min.first &&
+//                               x1_min.first < x2_max.first &&
+//                               x1_max.second > x2_min.second &&
+//                               x1_min.second < x2_max.second;
 
 //         if (is_overlapping && p.first <= placement[i].first.z)
 //         {
