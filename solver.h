@@ -71,6 +71,7 @@ public:
     
     // Constructor
     Solver(Sorter sorter_, Merit merit_, vector<Box> boxes,vector<Uld> ULD_);
+    bool writeToFile(string filename);
     int cost();
     bool checkCollision(coords e, Box b);
     bool check_collision_2D(int x1_min, int x1_max, int y1_min, int y1_max, int x2_min, int x2_max, int y2_min, int y2_max);
@@ -124,7 +125,7 @@ public:
 class ScoredSolver: public Solver{
 public:
     int iterations = 10, bestCost = numeric_limits<int>::min();
-    double alpha = 0.3, beta = 0.3;
+    double alpha = 0.1, beta = 0.1;
     vector<int> insertionOrder;
     // map<int, Box*> boxMap;
     vector<Uld> originalUldList;
@@ -143,7 +144,7 @@ public:
         boxMap.resize(boxes.size()+100);
     }
     void solve() override;
-    void reinitialize();
+    void reinitialize(bool _swap, double k = 2.0, int num_swap = SWAP_PAIRS);
     void update_scores(int i);
     void optimize(int _iter);
 };

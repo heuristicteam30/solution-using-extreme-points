@@ -46,6 +46,36 @@ Solver::Solver(Sorter sorter_, Merit merit_, vector<Box> boxes, vector<Uld> ULD_
     ULD_blocking_boxes_z = set<int, function<bool(const int &, const int &)>>(compare_z_base);
 }
 
+bool Solver::writeToFile(string filename){
+    set<int> ULDPackages;
+    int pkgCount = 0;
+    for (int i = 0; i < data.size(); ++i) {
+        if (placement[i].first.x != -1) {
+            if (data[i].isPriority)
+                ULDPackages.insert(placement[i].first.box);
+            pkgCount++;
+        }
+    }
+    ofstream file;
+    file.open(filename);
+    if(!file.is_open())return false;
+    file << -this->cost() << "," << pkgCount << "," << ULDPackages.size() << "\n";
+    for(int i = 0; i < data.size(); ++i){
+        if(placement[i].first.x == -1){
+            file << "P-" << data[i].ID << ",NONE,-1,-1,-1,-1,-1,-1\n";
+        } else {
+            file << "P-" << data[i].ID << "," << "U" << placement[i].first.box + 1 << "," 
+                << placement[i].first.x << "," << placement[i].first.y << "," 
+                << placement[i].first.z << "," 
+                << placement[i].second.l + placement[i].first.x << "," 
+                << placement[i].second.b + placement[i].first.y << "," 
+                << placement[i].second.h + placement[i].first.z << "\n";
+        }
+    }
+    file.close();
+    return true;
+}
+
 int Solver::cost()
 {
     int c = 0;
@@ -986,13 +1016,21 @@ void ScoredSolver::solve(){
     this->sorter.val(data);
     #endif
     #endif
+    #ifdef DATA_ORDERING
+    cout << "Data ordering:" << endl;
+    for(auto it: data){
+        // cout << it.ID << "," << score[it.ID] << " ";
+        cout << it.ID << " ";
+    }
+    cout << endl;
+    #endif
     For(i, ULDl.size()) ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
     For(i, data.size())
     {
         // Construct Economy Package and Box Map
         if(!data[i].isPriority){
             boxMap[data[i].ID] = &data[i];
-            cout << "Box ID: " << data[i].ID << endl;
+            // cout << "Box ID: " << data[i].ID << endl;
             economyPackages.insert(data[i].ID);
         }
 
@@ -1047,6 +1085,10 @@ void ScoredSolver::solve(){
         }
         placement[i] = best.second;
         ULDPackages[best.second.first.box].insert(i);
+        // ULDPackages[best.second.first.box].insert(i);
+        ULD_sorted_x[best.second.first.box].insert(i);
+        ULD_sorted_y[best.second.first.box].insert(i);
+        ULD_sorted_z[best.second.first.box].insert(i);
         // int pp=placement[i].first.z;
         gravity_pull(i);
         // if(pp!=placement[i].first.z)
@@ -1060,28 +1102,49 @@ void ScoredSolver::solve(){
     }
 
     // Initialising the scores
-    double k = 2.0;
-    for(auto i: economyPackages){
-        if(lastInsertionSet.find(i) == lastInsertionSet.end()){
-        // if(0){
-            score[i] = k*boxMap[i]->cost;
-        }
-        else{
-            score[i] = boxMap[i]->cost;
-        }
-    }
+    // double k = 2.0;
+    // for(auto i: economyPackages){
+    //     // if(lastInsertionSet.find(i) == lastInsertionSet.end()){
+    //     if(0){
+    //         score[i] = k*boxMap[i]->cost;
+    //     }
+    //     else{
+    //         score[i] = boxMap[i]->cost;
+    //     }
+    // }
     cout << "Base Solution Cost: " << this->cost() << endl;
+    #ifdef DATA_ORDERING
     cout << "Data ordering:" << endl;
     for(auto it: data){
         // cout << it.ID << "," << score[it.ID] << " ";
         cout << it.ID << " ";
     }
+    cout << endl;
+    #endif
     bestCost = this->cost();
+    // cout << bestCost;
+    // return;
     bestSolution = lastInsertion;
+    // optimize(0);
+    // writeToFile("other_result.csv");
+    // cout << "New Cost: " << this->cost() << endl;
+    // assert(this->cost() == bestCost);
+    int lastChangeIter = -1;
+    int reinitializeIter = 100, noChangeThreshold = 10;
+    int solverTime = static_cast<int>(time(nullptr));
     for(int i = 1; i <= iterations; i++){
         cout << "Iteration " << i << " started" << endl;
-        cout.flush();
-        update_scores(i);
+        if(i%reinitializeIter == 1 || i - lastChangeIter >= noChangeThreshold){
+            cout << "Reinitializing at iteration " << i << endl;
+            reinitialize(true, 2.0, 100);
+            lastChangeIter = i;
+        }
+        else{
+            update_scores(i);
+        }
+        
+
+        
         // Solver new_solver(this->sorter, this->merit, this->data, this->originalUldList);
         // new_solver.solve();
         // cout << "New solver costs me " << new_solver.cost() << endl;
@@ -1089,7 +1152,11 @@ void ScoredSolver::solve(){
         cout << "Iteration " << i << " had a cost " << this->cost() << endl;
         if(this->cost() > bestCost){
             cout << "Found new solution at iteration " << i << " with cost " << this->cost() << endl;
+            stringstream ss;
+            ss << "result_" << i << "_" << solverTime << ".txt";
+            this->writeToFile(ss.str());
             bestCost = this->cost();
+            lastChangeIter = i;
             bestSolution = lastInsertion;
             cout << "Updated base solution to " << endl;
             for(auto it: bestSolution){
@@ -1099,8 +1166,43 @@ void ScoredSolver::solve(){
     }
 }
 
-void ScoredSolver::reinitialize(){
+void ScoredSolver::reinitialize(bool _swap, double k, int num_swap){
+    set<int> bestSolutionSet(bestSolution.begin(), bestSolution.end());
+    vector<int> unselectedPackages;
+    for(auto it: economyPackages){
+        if(bestSolutionSet.find(it) != bestSolutionSet.end()){
+            score[it] = k*boxMap[it]->cost;
+        }
+        else{
+            unselectedPackages.push_back(it);
+            score[it] = boxMap[it]->cost;
+        }
+    }
     
+    vector<int> economyPackagesVec(economyPackages.begin(), economyPackages.end());
+    if(_swap){
+        for(int i = 0; i < num_swap; i++){
+            mt19937 mt(time(nullptr));
+            #define SWAP_DIFFERENT
+            #ifndef SWAP_DIFFERENT
+            int idx, idy;
+            do{
+                idx = mt()%economyPackagesVec.size();
+                idy = mt()%economyPackagesVec.size();
+            } while(idx == idy);
+            swap(score[economyPackagesVec[idx]], score[economyPackagesVec[idy]]);
+            #endif
+            #ifdef SWAP_DIFFERENT
+            int idx, idy;
+            do{
+                idx = mt()%bestSolution.size();
+                idy = mt()%unselectedPackages.size();
+            } while(idx == idy);
+            swap(score[bestSolution[idx]], score[unselectedPackages[idy]]);
+            #endif
+
+        }
+    }
 }
 
 /*
@@ -1156,27 +1258,69 @@ void ScoredSolver::optimize(int _iter){
     ULDl = this->originalUldList;
     placement.assign(data.size(), pair<coords, Box>(def, def_));
     ULDPackages.assign(ULDl.size(), set<int>());
+    ULD_sorted_x.assign(ULDl.size(), set<int, function<bool(const int &, const int &)>>(compare_x));
+    ULD_sorted_y.assign(ULDl.size(), set<int, function<bool(const int &, const int &)>>(compare_y));
+    ULD_sorted_z.assign(ULDl.size(), set<int, function<bool(const int &, const int &)>>(compare_z));
+    ULD_blocking_boxes_x = set<int, function<bool(const int &, const int &)>>(compare_x_base);
+    ULD_blocking_boxes_y = set<int, function<bool(const int &, const int &)>>(compare_y_base);
+    ULD_blocking_boxes_z = set<int, function<bool(const int &, const int &)>>(compare_z_base);
     surfaces.assign(ULDl.size(), set<pair<int,pair<pair<int,int>,pair<int,int>>>>());
     ULDHasPriority.assign(ULDl.size(), false);
     ep.clear();
 
     // sort(data.begin(), data.end(), this->sorter.val);
+    #define SORT_WITH_MARKS
+    #ifdef SORT_WITH_MARKS
+    vector<int> mark(data.size()+5);
+    for(int i =0; i != data.size(); i++){
+        for(int j = 0; j != data.size(); j++){
+            if(data[i].isPriority || data[j].isPriority)continue;
+            if(data[i].cost < data[j].cost)continue;
+            vector<int> perm_i = {data[i].l, data[i].b, data[i].h}; sort(perm_i.begin(), perm_i.end());
+            vector<int> perm_j = {data[j].l, data[j].b, data[j].h}; sort(perm_j.begin(), perm_j.end());
+            if(perm_i[0] <= perm_j[0] && perm_i[1] <= perm_j[1] && perm_i[2] <= perm_j[2]){
+                if(!(perm_i[0] == perm_j[0] && perm_i[1] == perm_j[1] && perm_i[2] == perm_j[2]) && data[i].cost == data[j].cost){ // Ensure they don't correspond to the samme box either
+                    mark[data[j].ID]++;
+                    break;
+                }
+            }
+        }
+    }
+    
+    sort(data.begin(), data.end(), [&](Box a,Box b){
+        if(b.isPriority and (not a.isPriority))return false;
+        if(a.isPriority and (not b.isPriority))return true;
+        if(mark[a.ID] != mark[b.ID]) return mark[a.ID] < mark[b.ID];
+        // if(a.isPriority and b.isPriority)return false;
+        // if(a.cost!=b.cost)return a.cost>b.cost;
+        if(score[a.ID]!=score[b.ID])return score[a.ID]>score[b.ID];
+        if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))<min(b.h,min(b.b,b.l));
+        return a.l*a.b*a.h > b.l*b.b*b.h;
+    });
+    #endif
+    #ifndef SORT_WITH_MARKS
     sort(data.begin(), data.end(), [&](Box a, Box b){
         if (a.isPriority && !b.isPriority)
             return true;
         if (!a.isPriority && b.isPriority)
             return false;
         // if(a.cost != b.cost) return a.cost > b.cost;
+
         if(score[a.ID]!=score[b.ID])return score[a.ID]>score[b.ID];
         if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))<min(b.h,min(b.b,b.l));
         return a.l*a.b*a.h > b.l*b.b*b.h;
     });
+    #endif
+
+    // this->sorter.val(data);
+    #ifdef DATA_ORDERING
     cout << "Data ordering:" << endl;
     for(auto it: data){
         // cout << it.ID << "," << score[it.ID] << " ";
         cout << it.ID << " ";
     }
     cout << endl;
+    #endif
     For(i, ULDl.size()) ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
     For(i, data.size())
     {
@@ -1232,11 +1376,15 @@ void ScoredSolver::optimize(int _iter){
         }
         placement[i] = best.second;
         ULDPackages[best.second.first.box].insert(i);
+        ULD_sorted_x[best.second.first.box].insert(i);
+        ULD_sorted_y[best.second.first.box].insert(i);
+        ULD_sorted_z[best.second.first.box].insert(i);
         // int pp=placement[i].first.z;
         gravity_pull(i);
         // if(pp!=placement[i].first.z)
         // c++;
-        addEP(i);
+        addEP2(i);
+        // addEP(i);
         update(i);
         // if(placement[i].second==data[i])
         // if(checkGravity(placement[i].first, placement[i].second))
