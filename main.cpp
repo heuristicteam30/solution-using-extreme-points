@@ -185,7 +185,6 @@ void final_execution() {
     weightz = weightz_min;
     // ScoredSolver s(Final_Ht, Residue, dat, ULDList, 1000);
     int i;
-    vector<int>visited(7);
     int TOTAL=0;
     vector<vector<Box>>dataa(6);
     dataa[0]=dat;
@@ -197,7 +196,7 @@ void final_execution() {
         // cout.flush();
         int usedVol = 0, ULDVol =0;
         double maxef=0;int pack=-1;
-        for(int j=0;j<6;j++)
+        for(int j=0;j<ULDList.size();j++)
         {
             // cout << j << " ";
             int vol =0;
@@ -205,30 +204,27 @@ void final_execution() {
             vol+=s.data[box].l*s.data[box].b*s.data[box].h;
             double p=1.0*vol/s.ULDl[j].dim.l/s.ULDl[j].dim.b/s.ULDl[j].dim.h;
             cout << p << "\n";
-            if(maxef<p && !visited[j])
+            if(maxef<p)
             {
                 maxef=p;
                 pack=j;
             }
         }
-        visited[pack]=1;
         vector<Box>data1;
         vector<Uld>ULD1;
-        ULDList[pack].maxWt=-1;
-        for(auto x:s.ULDPackages[pack])
-        data1.push_back(s.data[x]);
+        // ULDList[pack].maxWt=-1;
         vector<Uld>U;
-        for(auto x:ULDList)
+        for(int j=0;j<ULDList.size();j++)
         {
-            if(visited[x.ID-1])
-            continue;
-            U.push_back(x);
+            if(j!=pack)
+            U.push_back(ULDList[j]);
         }
         ULDList=U;
-        cout << U.size();
+        cout << ULDList.size();
+        for(auto x:s.ULDPackages[pack])
+        data1.push_back(s.data[x]);
         for(auto x:s.ULDPackages[pack])
         TOTAL+=s.data[x].cost;
-        // cout << s.ULDPackages[pack].size() << " ";
         vector<Box>data2;
         int p=data1.size();
         // cout << p << "\n";
