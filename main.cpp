@@ -24,6 +24,7 @@ double weightz = 0.2;
 const int LevelXYBoundWeight  =10;
 void final_execution() {
     #ifndef GENETIC
+    #ifdef OLD_SORTER
     Sorter Vol_Ht;
     Vol_Ht.val = [](Box a,Box b){
         if(b.isPriority and (not a.isPriority))return false;
@@ -51,10 +52,57 @@ void final_execution() {
         if (a.l * a.b == b.l * b.b) return a.h > b.h;
         return a.l * a.b > b.l * b.b;
     };
+    #endif
+    Sorter Vol_Ht;
+    Vol_Ht.val = [](vector<Box>& data){
+        sort(data.begin(), data.end(), [](Box a,Box b){
+            if(b.isPriority and (not a.isPriority))return false;
+            if(a.isPriority and (not b.isPriority))return true;
+            // if(a.isPriority and b.isPriority)return false;
+            if(a.cost!=b.cost)return a.cost>b.cost;
+            if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))<min(b.h,min(b.b,b.l));
+            return a.l*a.b*a.h > b.l*b.b*b.h;
+        });
+    };
+    Sorter Ashish_Ht;
+    Ashish_Ht.val = [](vector<Box>& data){
+        // bool is_pkg_contained(package &a, package &b) {
+		// vector<int> perm = {a.l, a.b, a.h}; sort(perm.begin(), perm.end());
 
-    // Define merit functions for different evaluation criteria
-    Merit MinVol;  // Placeholder merit function
-    MinVol.val = [](coords c, Box b, Solver* s) {
+		// do {
+		// 	if (perm[0] <= b.l && perm[1] <= b.h && perm[2] <= b.b) return true;
+		// } while (next_permutation(perm.begin(), perm.end()));
+		// return false;
+	    // }
+        vector<int> mark(data.size()+5);
+        for(int i =0; i != data.size(); i++){
+            for(int j = 0; j < i; j++){
+                if(data[i].cost < data[j].cost)continue;
+                vector<int> perm1 = {data[i].l, data[i].b, data[i].h}; sort(perm1.begin(), perm1.end());
+                vector<int> perm2 = {data[j].l, data[j].b, data[j].h}; sort(perm2.begin(), perm2.end());
+                if(perm1[0] < perm2[0] && perm1[1] < perm2[1] && perm1[2] < perm2[2]){
+                    mark[i] = 1;
+                    break;
+                }
+            }
+        }
+        
+        
+        sort(data.begin(), data.end(), [&](Box a,Box b){
+            if(b.isPriority and (not a.isPriority))return false;
+            if(a.isPriority and (not b.isPriority))return true;
+            if(mark[a.ID] != mark[b.ID]) return mark[a.ID] < mark[b.ID];
+            // if(a.isPriority and b.isPriority)return false;
+            if(a.cost!=b.cost)return a.cost>b.cost;
+            if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))<min(b.h,min(b.b,b.l));
+            return a.l*a.b*a.h > b.l*b.b*b.h;
+        });
+    };
+
+    
+    //merits
+    Merit MinVol;//redundant
+    MinVol.val = [](coords c, Box b,Solver* s){
         return 1;
     };
 

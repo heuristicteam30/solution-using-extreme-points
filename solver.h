@@ -3,9 +3,7 @@
 #define For(i,n) for(int i=0; i<n;i++)
 #define FOR(k,i,n) for(int i=k; i<n;i++)
 #define vi vector<int>
-#define max(a,b) (a>b?a:b)
 #define maxP(a,b) (a.first>b.first?a:b)
-#define min(a,b) (a<b?a:b)
 #define INF 10000000000000000
 #define pii pair<int,int>
 #define NON_PRIORITY_COST 1000000
@@ -15,14 +13,19 @@
 #define convertCoords(pt) pair<int,pair<int,pii>>(pt.box,pair<int,pii>(pt.x,pii(pt.y,pt.z)))
 using namespace std;
 
+#define SWAP_PAIRS 50
+
 bool check(const pair<pair<int,int>,pair<int,int>>&a, const pair<pair<int,int>,pair<int,int>>&b);
 class Solver;
 struct Box{
     int l,b,h,weight,cost,ID;bool isPriority;
 };
+// struct Sorter {
+// //    function<void(Solver*)>init;
+//     function<bool(Box,Box)>val;
+// };
 struct Sorter {
-//    function<void(Solver*)>init;
-    function<bool(Box,Box)>val;
+    function<void(vector<Box>& data)> val;
 };
 struct coords{
     int x,y,z,box;
@@ -120,12 +123,13 @@ public:
 */
 class ScoredSolver: public Solver{
 public:
-    int iterations = 10;
-    double alpha = 0.1, beta = 0.1;
+    int iterations = 10, bestCost = numeric_limits<int>::min();
+    double alpha = 0.3, beta = 0.3;
     vector<int> insertionOrder;
     // map<int, Box*> boxMap;
     vector<Uld> originalUldList;
     vector<Box*> boxMap;
+    vector<int> bestSolution;
     vector<double> score; /*Store the score correpsonding to each object.*/
     vector<int> insertionCounter; /*Store how many times each ID has been introduced in a solution, and how many times it hasn't*/
     vector<int> lastInsertion; /*Store the order of insertion in the last iteration. We store only economy packages for convenience*/
@@ -139,6 +143,7 @@ public:
         boxMap.resize(boxes.size()+100);
     }
     void solve() override;
+    void reinitialize();
     void update_scores(int i);
     void optimize(int _iter);
 };

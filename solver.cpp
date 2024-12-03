@@ -98,8 +98,15 @@ void Solver::solve()
     // int c=0;
     // cout << weightz << endl;
     #ifndef GENETIC
+    #ifdef OLD_SORT
     sort(data.begin(), data.end(), this->sorter.val);
     #endif
+    #ifndef OLD_SORT
+    this->sorter.val(data);
+    #endif
+    #endif
+
+    
     For(i, ULDl.size()) ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
     For(i, data.size())
     {
@@ -972,7 +979,12 @@ void ScoredSolver::solve(){
     // Initial Solve
     insertionCounter.assign(data.size()+5, 0);
     #ifndef GENETIC
+    #ifdef OLD_SORT
     sort(data.begin(), data.end(), this->sorter.val);
+    #endif
+    #ifndef OLD_SORT
+    this->sorter.val(data);
+    #endif
     #endif
     For(i, ULDl.size()) ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
     For(i, data.size())
@@ -980,6 +992,7 @@ void ScoredSolver::solve(){
         // Construct Economy Package and Box Map
         if(!data[i].isPriority){
             boxMap[data[i].ID] = &data[i];
+            cout << "Box ID: " << data[i].ID << endl;
             economyPackages.insert(data[i].ID);
         }
 
@@ -1024,8 +1037,6 @@ void ScoredSolver::solve(){
         // update vals
         if (best.first == -INF)
             continue;
-        cout << insertionCounter.size() << " " << data[i].ID << endl;
-        cout.flush();
         insertionCounter[data[i].ID]+=1;
         if (data[i].isPriority){
             ULDHasPriority[best.second.first.box] = true;
@@ -1049,26 +1060,46 @@ void ScoredSolver::solve(){
     }
 
     // Initialising the scores
+    double k = 2.0;
     for(auto i: economyPackages){
         if(lastInsertionSet.find(i) == lastInsertionSet.end()){
-            score[i] = 3.0*boxMap[i]->cost;
+        // if(0){
+            score[i] = k*boxMap[i]->cost;
         }
         else{
             score[i] = boxMap[i]->cost;
         }
     }
+    cout << "Base Solution Cost: " << this->cost() << endl;
+    cout << "Data ordering:" << endl;
+    for(auto it: data){
+        // cout << it.ID << "," << score[it.ID] << " ";
+        cout << it.ID << " ";
+    }
+    bestCost = this->cost();
+    bestSolution = lastInsertion;
     for(int i = 1; i <= iterations; i++){
         cout << "Iteration " << i << " started" << endl;
         cout.flush();
         update_scores(i);
+        // Solver new_solver(this->sorter, this->merit, this->data, this->originalUldList);
+        // new_solver.solve();
+        // cout << "New solver costs me " << new_solver.cost() << endl;
         optimize(i);
         cout << "Iteration " << i << " had a cost " << this->cost() << endl;
+        if(this->cost() > bestCost){
+            cout << "Found new solution at iteration " << i << " with cost " << this->cost() << endl;
+            bestCost = this->cost();
+            bestSolution = lastInsertion;
+            cout << "Updated base solution to " << endl;
+            for(auto it: bestSolution){
+                cout << it << " ";
+            }
+        }
     }
-    
+}
 
-
-
-
+void ScoredSolver::reinitialize(){
     
 }
 
@@ -1127,23 +1158,23 @@ void ScoredSolver::optimize(int _iter){
     ULDPackages.assign(ULDl.size(), set<int>());
     surfaces.assign(ULDl.size(), set<pair<int,pair<pair<int,int>,pair<int,int>>>>());
     ULDHasPriority.assign(ULDl.size(), false);
-    
+    ep.clear();
 
-
-    
+    // sort(data.begin(), data.end(), this->sorter.val);
     sort(data.begin(), data.end(), [&](Box a, Box b){
         if (a.isPriority && !b.isPriority)
             return true;
         if (!a.isPriority && b.isPriority)
             return false;
+        // if(a.cost != b.cost) return a.cost > b.cost;
         if(score[a.ID]!=score[b.ID])return score[a.ID]>score[b.ID];
         if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))<min(b.h,min(b.b,b.l));
         return a.l*a.b*a.h > b.l*b.b*b.h;
     });
     cout << "Data ordering:" << endl;
     for(auto it: data){
-        cout << it.ID << "," << score[it.ID] << " ";
-        // cout << it.ID << " ";
+        // cout << it.ID << "," << score[it.ID] << " ";
+        cout << it.ID << " ";
     }
     cout << endl;
     For(i, ULDl.size()) ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
@@ -1211,14 +1242,4 @@ void ScoredSolver::optimize(int _iter){
         // if(checkGravity(placement[i].first, placement[i].second))
         // printf("error\n");
     }
-
-    // Initialising the scores
-    // for(auto i: economyPackages){
-    //     if(lastInsertionSet.find(i) == lastInsertionSet.end()){
-    //         score[i] = 3*boxMap[i]->cost;
-    //     }
-    //     else{
-    //         score[i] = boxMap[i]->cost;
-    //     }
-    // }
 }

@@ -2,7 +2,7 @@
 CC = g++
 
 # Compiler flags
-CFLAGS = -Wall -g
+CFLAGS = -g
 
 # Target executable
 TARGET = solution
