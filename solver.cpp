@@ -1,17 +1,17 @@
 #include "solver.h"
 #define int long long
-#define For(i,n) for(int i=0; i<n;i++)
-#define FOR(k,i,n) for(int i=k; i<n;i++)
+#define For(i, n) for (int i = 0; i < n; i++)
+#define FOR(k, i, n) for (int i = k; i < n; i++)
 #define vi vector<int>
-#define max(a,b) (a>b?a:b)
-#define maxP(a,b) (a.first>b.first?a:b)
-#define min(a,b) (a<b?a:b)
+#define max(a, b) (a > b ? a : b)
+#define maxP(a, b) (a.first > b.first ? a : b)
+#define min(a, b) (a < b ? a : b)
 #define INF 10000000000000000
-#define pii pair<int,int>
+#define pii pair<int, int>
 #define NON_PRIORITY_COST 1000000
 #define PRIORITY_ULD_COST 5000
 #define RESIDUE_THRESHOLD 0
-#define convertCoords(pt) pair<int,pair<int,pii>>(pt.box,pair<int,pii>(pt.x,pii(pt.y,pt.z)))
+#define convertCoords(pt) pair<int, pair<int, pii>>(pt.box, pair<int, pii>(pt.x, pii(pt.y, pt.z)))
 
 using namespace std;
 
@@ -40,29 +40,38 @@ Solver::Solver(Sorter sorter_, Merit merit_, vector<Box> boxes, vector<Uld> ULD_
     ULDHasPriority.assign(ULDl.size(), false);
 
     // comparator function definitoins for additional EP creation
-    compare_x = [this](const int &a, const int &b) { return placement[a].first.x + placement[a].second.l > placement[b].first.x + placement[b].second.l; };
-    compare_y = [this](const int &a, const int &b) { return placement[a].first.y + placement[a].second.b > placement[b].first.y + placement[b].second.b; };
-    compare_z = [this](const int &a, const int &b) { return placement[a].first.z + placement[a].second.h > placement[b].first.z + placement[b].second.h; };
+    compare_x = [this](const int &a, const int &b)
+    { return placement[a].first.x + placement[a].second.l > placement[b].first.x + placement[b].second.l; };
+    compare_y = [this](const int &a, const int &b)
+    { return placement[a].first.y + placement[a].second.b > placement[b].first.y + placement[b].second.b; };
+    compare_z = [this](const int &a, const int &b)
+    { return placement[a].first.z + placement[a].second.h > placement[b].first.z + placement[b].second.h; };
 
     ULD_sorted_x.assign(ULDl.size(), set<int, function<bool(const int &, const int &)>>(compare_x));
     ULD_sorted_y.assign(ULDl.size(), set<int, function<bool(const int &, const int &)>>(compare_y));
     ULD_sorted_z.assign(ULDl.size(), set<int, function<bool(const int &, const int &)>>(compare_z));
 
     // sort blocking pkts in increasing order of base face coordinate
-    compare_x_base = [this](const int &a, const int &b) { return placement[a].first.x < placement[b].first.x; }; 
-    compare_y_base = [this](const int &a, const int &b) { return placement[a].first.y < placement[b].first.y; };
-    compare_z_base = [this](const int &a, const int &b) { return placement[a].first.z < placement[b].first.z; };
+    compare_x_base = [this](const int &a, const int &b)
+    { return placement[a].first.x < placement[b].first.x; };
+    compare_y_base = [this](const int &a, const int &b)
+    { return placement[a].first.y < placement[b].first.y; };
+    compare_z_base = [this](const int &a, const int &b)
+    { return placement[a].first.z < placement[b].first.z; };
 
     ULD_blocking_boxes_x = set<int, function<bool(const int &, const int &)>>(compare_x_base);
     ULD_blocking_boxes_y = set<int, function<bool(const int &, const int &)>>(compare_y_base);
     ULD_blocking_boxes_z = set<int, function<bool(const int &, const int &)>>(compare_z_base);
 }
 
-bool Solver::writeToFile(string filename){
+bool Solver::writeToFile(string filename)
+{
     set<int> ULDPackages;
     int pkgCount = 0;
-    for (int i = 0; i < data.size(); ++i) {
-        if (placement[i].first.x != -1) {
+    for (int i = 0; i < data.size(); ++i)
+    {
+        if (placement[i].first.x != -1)
+        {
             if (data[i].isPriority)
                 ULDPackages.insert(placement[i].first.box);
             pkgCount++;
@@ -70,18 +79,23 @@ bool Solver::writeToFile(string filename){
     }
     ofstream file;
     file.open(filename);
-    if(!file.is_open())return false;
+    if (!file.is_open())
+        return false;
     file << -this->cost() << "," << pkgCount << "," << ULDPackages.size() << "\n";
-    for(int i = 0; i < data.size(); ++i){
-        if(placement[i].first.x == -1){
+    for (int i = 0; i < data.size(); ++i)
+    {
+        if (placement[i].first.x == -1)
+        {
             file << "P-" << data[i].ID << ",NONE,-1,-1,-1,-1,-1,-1\n";
-        } else {
-            file << "P-" << data[i].ID << "," << "U" << placement[i].first.box + 1 << "," 
-                << placement[i].first.x << "," << placement[i].first.y << "," 
-                << placement[i].first.z << "," 
-                << placement[i].second.l + placement[i].first.x << "," 
-                << placement[i].second.b + placement[i].first.y << "," 
-                << placement[i].second.h + placement[i].first.z << "\n";
+        }
+        else
+        {
+            file << "P-" << data[i].ID << "," << "U" << placement[i].first.box + 1 << ","
+                 << placement[i].first.x << "," << placement[i].first.y << ","
+                 << placement[i].first.z << ","
+                 << placement[i].second.l + placement[i].first.x << ","
+                 << placement[i].second.b + placement[i].first.y << ","
+                 << placement[i].second.h + placement[i].first.z << "\n";
         }
     }
     file.close();
@@ -90,7 +104,7 @@ bool Solver::writeToFile(string filename){
 
 int Solver::cost()
 {
-    int totalcost = 0; // to store total cost of solution
+    int totalcost = 0;          // to store total cost of solution
     set<int> priorityShipments; // to store ULDs containing priority packages
     for (int i = 0; i < data.size(); i++)
     {
@@ -112,9 +126,9 @@ bool Solver::checkCollision(coords e, Box b)
 {
     // checks collision of prespective packages with all other packages of same ULD along with weight constraint of the ULD
     // if (e.x + b.l > ULDl[e.box].dim.l or e.y + b.b > ULDl[e.box].dim.b or e.z + b.h >         ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
-    if (e.x + b.l >= ULDl[e.box].dim.l or e.y + b.b >= ULDl[e.box].dim.b or e.z + b.h >=        ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
+    if (e.x + b.l >= ULDl[e.box].dim.l or e.y + b.b >= ULDl[e.box].dim.b or e.z + b.h >= ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
         return true;
-    
+
     // check collision of the given packages with all other packages of same ULD
     for (auto i : ULDPackages[e.box])
     {
@@ -129,20 +143,19 @@ bool Solver::checkCollision(coords e, Box b)
 
 void Solver::solve()
 {
-    // int c=0;
-    // cout << weightz << endl;
-    #ifndef GENETIC
-    #ifdef OLD_SORT
+// int c=0;
+// cout << weightz << endl;
+#ifndef GENETIC
+#ifdef OLD_SORT
     sort(data.begin(), data.end(), this->sorter.val);
-    #endif
-    #ifndef OLD_SORT
+#endif
+#ifndef OLD_SORT
     this->sorter.val(data);
-    #endif
-    #endif
+#endif
+#endif
 
-    
-    For(i, ULDl.size()) ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
-    For(i, data.size())
+    for(int i=0;i<ULDl.size();i++) ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
+    for(int i=0;i<data.size();i++)
     {
         Box b = data[i];
         pair<int, pair<coords, Box>> best;
@@ -200,6 +213,7 @@ void Solver::solve()
         addEP2(i);
         update(i);
     }
+    
 }
 
 void Solver::update(int i)
@@ -362,10 +376,11 @@ bool Solver::check_collision_2D(int x1_min, int x1_max, int y1_min, int y1_max, 
     bool is_y2_max_inside = (y2_max > y1_min) && (y2_max <= y1_max);
     return (is_x2_min_inside || is_x2_max_inside) && (is_y2_min_inside || is_y2_max_inside);
 }
-void Solver::projection_neg_z_advanced(vector<coords> &advanced_eps, coords start, int self_pid){
+void Solver::projection_neg_z_advanced(vector<coords> &advanced_eps, coords start, int self_pid)
+{
 
     bool hit_bottom = true;
-    for(auto i: ULD_sorted_z[start.box])
+    for (auto i : ULD_sorted_z[start.box])
     {
         coords potential_ep;
         potential_ep.box = start.box;
@@ -373,72 +388,99 @@ void Solver::projection_neg_z_advanced(vector<coords> &advanced_eps, coords star
         potential_ep.y = start.y;
         potential_ep.z = placement[i].first.z + placement[i].second.h;
 
-        if(i == self_pid)
+        if (i == self_pid)
             continue;
         auto pkt = placement[i];
-        if(pkt.first.x == -1) continue;
-        if(pkt.first.x + pkt.second.l <= start.x) continue;
-        if(pkt.first.y + pkt.second.b <= start.y) continue;
-        if(pkt.first.z >= start.z) continue;
+        if (pkt.first.x == -1)
+            continue;
+        if (pkt.first.x + pkt.second.l <= start.x)
+            continue;
+        if (pkt.first.y + pkt.second.b <= start.y)
+            continue;
+        if (pkt.first.z >= start.z)
+            continue;
 
         // case 0: ray hits the object (no more projections)
-        if((start.x >= pkt.first.x) && (start.x < pkt.first.x + pkt.second.l) &&
-           (start.y >= pkt.first.y) && (start.y < pkt.first.y + pkt.second.b)) {
+        if ((start.x >= pkt.first.x) && (start.x < pkt.first.x + pkt.second.l) &&
+            (start.y >= pkt.first.y) && (start.y < pkt.first.y + pkt.second.b))
+        {
             advanced_eps.push_back(potential_ep);
             hit_bottom = false;
             break;
         }
         // check if the pkt is being blocked by other packets
-        if(start.x >= pkt.first.x){
+        if (start.x >= pkt.first.x)
+        {
             bool is_blocked = false;
-            for(auto j: ULD_blocking_boxes_z){
+            for (auto j : ULD_blocking_boxes_z)
+            {
                 auto blocking_pkt = placement[j];
-                if(blocking_pkt.first.x == -1) continue; // although this should not happen
-                if(blocking_pkt.first.z > pkt.first.z + pkt.second.h) continue;
-                if(!((blocking_pkt.first.y + blocking_pkt.second.b > start.y) && (blocking_pkt.first.y <= pkt.first.y))) continue;
-                if(!((start.x >= blocking_pkt.first.x) && (start.x < blocking_pkt.first.x + blocking_pkt.second.l))) continue;
+                if (blocking_pkt.first.x == -1)
+                    continue; // although this should not happen
+                if (blocking_pkt.first.z > pkt.first.z + pkt.second.h)
+                    continue;
+                if (!((blocking_pkt.first.y + blocking_pkt.second.b > start.y) && (blocking_pkt.first.y <= pkt.first.y)))
+                    continue;
+                if (!((start.x >= blocking_pkt.first.x) && (start.x < blocking_pkt.first.x + blocking_pkt.second.l)))
+                    continue;
                 is_blocked = true;
                 break;
             }
-            if(is_blocked) continue;
+            if (is_blocked)
+                continue;
         }
-        else if(start.y >= pkt.first.y){
-            // give line by line 
+        else if (start.y >= pkt.first.y)
+        {
+            // give line by line
             bool is_blocked = false;
-            for(auto j: ULD_blocking_boxes_z){
+            for (auto j : ULD_blocking_boxes_z)
+            {
                 auto blocking_pkt = placement[j];
-                if(blocking_pkt.first.x == -1) continue; // although this should not happen
-                if(blocking_pkt.first.z > pkt.first.z + pkt.second.h) continue;
-                if(!((blocking_pkt.first.x + blocking_pkt.second.l > start.x) && (blocking_pkt.first.x <= pkt.first.x))) continue;
-                if(!((start.y >= blocking_pkt.first.y) && (start.y < blocking_pkt.first.y + blocking_pkt.second.b))) continue;
+                if (blocking_pkt.first.x == -1)
+                    continue; // although this should not happen
+                if (blocking_pkt.first.z > pkt.first.z + pkt.second.h)
+                    continue;
+                if (!((blocking_pkt.first.x + blocking_pkt.second.l > start.x) && (blocking_pkt.first.x <= pkt.first.x)))
+                    continue;
+                if (!((start.y >= blocking_pkt.first.y) && (start.y < blocking_pkt.first.y + blocking_pkt.second.b)))
+                    continue;
                 is_blocked = true;
                 break;
             }
-            if(is_blocked) continue;   
+            if (is_blocked)
+                continue;
         }
-        else{ // diagonal intersection
+        else
+        { // diagonal intersection
             bool is_blocked = false;
-            for(auto j: ULD_blocking_boxes_z){
+            for (auto j : ULD_blocking_boxes_z)
+            {
                 auto blocking_pkt = placement[j];
-                if(blocking_pkt.first.x == -1) continue; // although this should not happen
-                if(blocking_pkt.first.z > pkt.first.z + pkt.second.h) continue;
-                is_blocked = check_collision_2D(pkt.first.x, pkt.first.x + pkt.second.l, 
+                if (blocking_pkt.first.x == -1)
+                    continue; // although this should not happen
+                if (blocking_pkt.first.z > pkt.first.z + pkt.second.h)
+                    continue;
+                is_blocked = check_collision_2D(pkt.first.x, pkt.first.x + pkt.second.l,
                                                 pkt.first.y, pkt.first.y + pkt.second.b,
-                                                blocking_pkt.first.x, blocking_pkt.first.x + blocking_pkt.second.l, 
+                                                blocking_pkt.first.x, blocking_pkt.first.x + blocking_pkt.second.l,
                                                 blocking_pkt.first.y, blocking_pkt.first.y + blocking_pkt.second.b);
-                if(is_blocked) break;
+                if (is_blocked)
+                    break;
             }
-            if(is_blocked) continue;   
+            if (is_blocked)
+                continue;
         }
-        
+
         // add to the blocking pkts list
         ULD_blocking_boxes_z.insert(i);
-        if(pkt.first.z + pkt.second.h < start.z){
+        if (pkt.first.z + pkt.second.h < start.z)
+        {
             advanced_eps.push_back(potential_ep);
         }
     }
     ULD_blocking_boxes_z.clear();
-    if(hit_bottom){
+    if (hit_bottom)
+    {
         coords potential_ep;
         potential_ep.box = start.box;
         potential_ep.x = start.x;
@@ -447,227 +489,236 @@ void Solver::projection_neg_z_advanced(vector<coords> &advanced_eps, coords star
         advanced_eps.push_back(potential_ep);
     }
     return;
-
 }
 
-void Solver::projection_neg_y_advanced(vector<coords> &advanced_eps, coords start, int self_pid){
-    
-        bool hit_bottom = true;
-        for(auto i: ULD_sorted_y[start.box])
+void Solver::projection_neg_y_advanced(vector<coords> &advanced_eps, coords start, int self_pid)
+{
+
+    bool hit_bottom = true;
+    for (auto i : ULD_sorted_y[start.box])
+    {
+        coords potential_ep;
+        potential_ep.box = start.box;
+        potential_ep.x = start.x;
+        potential_ep.y = placement[i].first.y + placement[i].second.b;
+        potential_ep.z = start.z;
+
+        if (i == self_pid)
+            continue;
+        auto pkt = placement[i];
+        if (pkt.first.x == -1)
+            continue;
+        if (pkt.first.x + pkt.second.l <= start.x)
+            continue;
+        if (pkt.first.z + pkt.second.h <= start.z)
+            continue;
+        if (pkt.first.y >= start.y)
+            continue;
+
+        // case 0: ray hits the object (no more projections)
+        if ((start.x >= pkt.first.x) && (start.x < pkt.first.x + pkt.second.l) &&
+            (start.z >= pkt.first.z) && (start.z < pkt.first.z + pkt.second.h))
         {
-            coords potential_ep;
-            potential_ep.box = start.box;
-            potential_ep.x = start.x;
-            potential_ep.y = placement[i].first.y + placement[i].second.b;
-            potential_ep.z = start.z;
-    
-            if(i == self_pid)
-                continue;
-            auto pkt = placement[i];
-            if(pkt.first.x == -1) continue;
-            if(pkt.first.x + pkt.second.l <= start.x) continue;
-            if(pkt.first.z + pkt.second.h <= start.z) continue;
-            if(pkt.first.y >= start.y) continue;
-    
-            // case 0: ray hits the object (no more projections)
-            if((start.x >= pkt.first.x) && (start.x < pkt.first.x + pkt.second.l) &&
-               (start.z >= pkt.first.z) && (start.z < pkt.first.z + pkt.second.h)) {
-                advanced_eps.push_back(potential_ep);
-                hit_bottom = false;
+            advanced_eps.push_back(potential_ep);
+            hit_bottom = false;
+            break;
+        }
+        // check if the pkt is being blocked by other packets
+        if (start.x >= pkt.first.x)
+        {
+            bool is_blocked = false;
+            for (auto j : ULD_blocking_boxes_y)
+            {
+                auto blocking_pkt = placement[j];
+                if (blocking_pkt.first.x == -1)
+                    continue; // although this should not happen
+                if (blocking_pkt.first.y > pkt.first.y + pkt.second.b)
+                    continue;
+                if (!((blocking_pkt.first.z + blocking_pkt.second.h > start.z) && (blocking_pkt.first.z <= pkt.first.z)))
+                    continue;
+                if (!((start.x >= blocking_pkt.first.x) && (start.x < blocking_pkt.first.x + blocking_pkt.second.l)))
+                    continue;
+                is_blocked = true;
                 break;
             }
-            // check if the pkt is being blocked by other packets
-            if(start.x >= pkt.first.x){
-                bool is_blocked = false;
-                for(auto j: ULD_blocking_boxes_y){
-                    auto blocking_pkt = placement[j];
-                    if(blocking_pkt.first.x == -1) continue; // although this should not happen
-                    if(blocking_pkt.first.y > pkt.first.y + pkt.second.b) continue;
-                    if(!((blocking_pkt.first.z + blocking_pkt.second.h > start.z) && (blocking_pkt.first.z <= pkt.first.z))) continue;
-                    if(!((start.x >= blocking_pkt.first.x) && (start.x < blocking_pkt.first.x + blocking_pkt.second.l))) continue;
-                    is_blocked = true;
-                    break;
-                }
-                if(is_blocked) continue;
-            }
-            else if(start.z >= pkt.first.z){
-                // give line by line 
-                bool is_blocked = false;
-                for(auto j: ULD_blocking_boxes_y){
-                    auto blocking_pkt = placement[j];
-                    if(blocking_pkt.first.x == -1) continue; // although this should not happen
-                    if(blocking_pkt.first.y > pkt.first.y + pkt.second.b) continue;
-                    if(!((blocking_pkt.first.x + blocking_pkt.second.l > start.x) && (blocking_pkt.first.x <= pkt.first.x))) continue;
-                    if(!((start.z >= blocking_pkt.first.z) && (start.z < blocking_pkt.first.z + blocking_pkt.second.h))) continue;
-                    is_blocked = true;
-                    break;
-                }
-                if(is_blocked) continue;   
-            }
-
-            else{ // diagonal intersection
-                bool is_blocked = false;
-                for(auto j: ULD_blocking_boxes_y){
-                    auto blocking_pkt = placement[j];
-                    if(blocking_pkt.first.x == -1) continue; // although this should not happen
-                    is_blocked = check_collision_2D(pkt.first.x, pkt.first.x + pkt.second.l, 
-                                                    pkt.first.z, pkt.first.z + pkt.second.h,
-                                                    blocking_pkt.first.x, blocking_pkt.first.x + blocking_pkt.second.l, 
-                                                    blocking_pkt.first.z, blocking_pkt.first.z + blocking_pkt.second.h);
-                    if(is_blocked) break;
-                }
-                if(is_blocked) continue;   
-            }
-
-            // add to the blocking pkts list
-            ULD_blocking_boxes_y.insert(i);
-            if(pkt.first.y + pkt.second.b < start.y){
-                advanced_eps.push_back(potential_ep);
-            }
+            if (is_blocked)
+                continue;
         }
-        ULD_blocking_boxes_y.clear();
-        if(hit_bottom){
-            coords potential_ep;
-            potential_ep.box = start.box;
-            potential_ep.x = start.x;
-            potential_ep.y = 0;
-            potential_ep.z = start.z;
+        else if (start.z >= pkt.first.z)
+        {
+            // give line by line
+            bool is_blocked = false;
+            for (auto j : ULD_blocking_boxes_y)
+            {
+                auto blocking_pkt = placement[j];
+                if (blocking_pkt.first.x == -1)
+                    continue; // although this should not happen
+                if (blocking_pkt.first.y > pkt.first.y + pkt.second.b)
+                    continue;
+                if (!((blocking_pkt.first.x + blocking_pkt.second.l > start.x) && (blocking_pkt.first.x <= pkt.first.x)))
+                    continue;
+                if (!((start.z >= blocking_pkt.first.z) && (start.z < blocking_pkt.first.z + blocking_pkt.second.h)))
+                    continue;
+                is_blocked = true;
+                break;
+            }
+            if (is_blocked)
+                continue;
+        }
+
+        else
+        { // diagonal intersection
+            bool is_blocked = false;
+            for (auto j : ULD_blocking_boxes_y)
+            {
+                auto blocking_pkt = placement[j];
+                if (blocking_pkt.first.x == -1)
+                    continue; // although this should not happen
+                is_blocked = check_collision_2D(pkt.first.x, pkt.first.x + pkt.second.l,
+                                                pkt.first.z, pkt.first.z + pkt.second.h,
+                                                blocking_pkt.first.x, blocking_pkt.first.x + blocking_pkt.second.l,
+                                                blocking_pkt.first.z, blocking_pkt.first.z + blocking_pkt.second.h);
+                if (is_blocked)
+                    break;
+            }
+            if (is_blocked)
+                continue;
+        }
+
+        // add to the blocking pkts list
+        ULD_blocking_boxes_y.insert(i);
+        if (pkt.first.y + pkt.second.b < start.y)
+        {
             advanced_eps.push_back(potential_ep);
         }
-        return;
+    }
+    ULD_blocking_boxes_y.clear();
+    if (hit_bottom)
+    {
+        coords potential_ep;
+        potential_ep.box = start.box;
+        potential_ep.x = start.x;
+        potential_ep.y = 0;
+        potential_ep.z = start.z;
+        advanced_eps.push_back(potential_ep);
+    }
+    return;
 }
 
-void Solver::projection_neg_x_advanced(vector<coords> &advanced_eps, coords start, int self_pid){
-    
-        bool hit_bottom = true;
-        for(auto i: ULD_sorted_x[start.box])
+void Solver::projection_neg_x_advanced(vector<coords> &advanced_eps, coords start, int self_pid)
+{
+
+    bool hit_bottom = true;
+    for (auto i : ULD_sorted_x[start.box])
+    {
+        coords potential_ep;
+        potential_ep.box = start.box;
+        potential_ep.x = placement[i].first.x + placement[i].second.l;
+        potential_ep.y = start.y;
+        potential_ep.z = start.z;
+
+        if (i == self_pid)
+            continue;
+        auto pkt = placement[i];
+        if (pkt.first.x == -1)
+            continue;
+        if (pkt.first.y + pkt.second.b <= start.y)
+            continue;
+        if (pkt.first.z + pkt.second.h <= start.z)
+            continue;
+        if (pkt.first.x >= start.x)
+            continue;
+
+        // case 0: ray hits the object (no more projections)
+        if ((start.y >= pkt.first.y) && (start.y < pkt.first.y + pkt.second.b) &&
+            (start.z >= pkt.first.z) && (start.z < pkt.first.z + pkt.second.h))
         {
-            coords potential_ep;
-            potential_ep.box = start.box;
-            potential_ep.x = placement[i].first.x + placement[i].second.l;
-            potential_ep.y = start.y;
-            potential_ep.z = start.z;
-    
-            if(i == self_pid)
-                continue;
-            auto pkt = placement[i];
-            if(pkt.first.x == -1) continue;
-            if(pkt.first.y + pkt.second.b <= start.y) continue;
-            if(pkt.first.z + pkt.second.h <= start.z) continue;
-            if(pkt.first.x >= start.x) continue;
-    
-            // case 0: ray hits the object (no more projections)
-            if((start.y >= pkt.first.y) && (start.y < pkt.first.y + pkt.second.b) &&
-               (start.z >= pkt.first.z) && (start.z < pkt.first.z + pkt.second.h)) {
-                advanced_eps.push_back(potential_ep);
-                hit_bottom = false;
+            advanced_eps.push_back(potential_ep);
+            hit_bottom = false;
+            break;
+        }
+        // check if the pkt is being blocked by other packets
+        if (start.y >= pkt.first.y)
+        {
+            bool is_blocked = false;
+            for (auto j : ULD_blocking_boxes_x)
+            {
+                auto blocking_pkt = placement[j];
+                if (blocking_pkt.first.y == -1)
+                    continue; // although this should not happen
+                if (blocking_pkt.first.x > pkt.first.x + pkt.second.l)
+                    continue;
+                if (!((blocking_pkt.first.z + blocking_pkt.second.h > start.z) && (blocking_pkt.first.z <= pkt.first.z)))
+                    continue;
+                if (!((start.y >= blocking_pkt.first.y) && (start.y < pkt.first.y + pkt.second.b)))
+                    continue;
+                is_blocked = true;
                 break;
             }
-            // check if the pkt is being blocked by other packets
-            if(start.y >= pkt.first.y){
-                bool is_blocked = false;
-                for(auto j: ULD_blocking_boxes_x){
-                    auto blocking_pkt = placement[j];
-                    if(blocking_pkt.first.y == -1) continue; // although this should not happen
-                    if(blocking_pkt.first.x > pkt.first.x + pkt.second.l) continue;
-                    if(!((blocking_pkt.first.z + blocking_pkt.second.h > start.z) && (blocking_pkt.first.z <= pkt.first.z))) continue;
-                    if(!((start.y >= blocking_pkt.first.y) && (start.y < pkt.first.y + pkt.second.b))) continue;
-                    is_blocked = true;
-                    break;
-                }
-                if(is_blocked) continue;
-            }
-            else if(start.z >= pkt.first.z){
-                // give line by line 
-                bool is_blocked = false;
-                for(auto j: ULD_blocking_boxes_x){
-                    auto blocking_pkt = placement[j];
-                    if(blocking_pkt.first.y == -1) continue; // although this should not happen
-                    if(blocking_pkt.first.x > pkt.first.x + pkt.second.l) continue;
-                    if(!((blocking_pkt.first.y + blocking_pkt.second.b > start.y) && (blocking_pkt.first.y <= pkt.first.y))) continue;
-                    if(!((start.z >= blocking_pkt.first.z) && (start.z < blocking_pkt.first.z + blocking_pkt.second.h))) continue;
-                    is_blocked = true;
-                    break;
-                }
-                if(is_blocked) continue;   
-            }
-            else{ // diagonal intersection
-                bool is_blocked = false;
-                for(auto j: ULD_blocking_boxes_x){
-                    auto blocking_pkt = placement[j];
-                    if(blocking_pkt.first.y == -1) continue; // although this should not happen
-                    is_blocked = check_collision_2D(pkt.first.y, pkt.first.y + pkt.second.b, 
-                                                    pkt.first.z, pkt.first.z + pkt.second.h,
-                                                    blocking_pkt.first.y, blocking_pkt.first.y + blocking_pkt.second.b, 
-                                                    blocking_pkt.first.z, blocking_pkt.first.z + blocking_pkt.second.h);
-                    if(is_blocked) break;
-                }
-                if(is_blocked) continue;   
-            }
-
-            // add to the blocking pkts list
-            ULD_blocking_boxes_x.insert(i);
-            if(pkt.first.x + pkt.second.l < start.x){
-                advanced_eps.push_back(potential_ep);
-            }
+            if (is_blocked)
+                continue;
         }
-        ULD_blocking_boxes_x.clear();
-        if(hit_bottom){
-            coords potential_ep;
-            potential_ep.box = start.box;
-            potential_ep.x = 0;
-            potential_ep.y = start.y;
-            potential_ep.z = start.z;
+        else if (start.z >= pkt.first.z)
+        {
+            // give line by line
+            bool is_blocked = false;
+            for (auto j : ULD_blocking_boxes_x)
+            {
+                auto blocking_pkt = placement[j];
+                if (blocking_pkt.first.y == -1)
+                    continue; // although this should not happen
+                if (blocking_pkt.first.x > pkt.first.x + pkt.second.l)
+                    continue;
+                if (!((blocking_pkt.first.y + blocking_pkt.second.b > start.y) && (blocking_pkt.first.y <= pkt.first.y)))
+                    continue;
+                if (!((start.z >= blocking_pkt.first.z) && (start.z < blocking_pkt.first.z + blocking_pkt.second.h)))
+                    continue;
+                is_blocked = true;
+                break;
+            }
+            if (is_blocked)
+                continue;
+        }
+        else
+        { // diagonal intersection
+            bool is_blocked = false;
+            for (auto j : ULD_blocking_boxes_x)
+            {
+                auto blocking_pkt = placement[j];
+                if (blocking_pkt.first.y == -1)
+                    continue; // although this should not happen
+                is_blocked = check_collision_2D(pkt.first.y, pkt.first.y + pkt.second.b,
+                                                pkt.first.z, pkt.first.z + pkt.second.h,
+                                                blocking_pkt.first.y, blocking_pkt.first.y + blocking_pkt.second.b,
+                                                blocking_pkt.first.z, blocking_pkt.first.z + blocking_pkt.second.h);
+                if (is_blocked)
+                    break;
+            }
+            if (is_blocked)
+                continue;
+        }
+
+        // add to the blocking pkts list
+        ULD_blocking_boxes_x.insert(i);
+        if (pkt.first.x + pkt.second.l < start.x)
+        {
             advanced_eps.push_back(potential_ep);
         }
-        return;
+    }
+    ULD_blocking_boxes_x.clear();
+    if (hit_bottom)
+    {
+        coords potential_ep;
+        potential_ep.box = start.box;
+        potential_ep.x = 0;
+        potential_ep.y = start.y;
+        potential_ep.z = start.z;
+        advanced_eps.push_back(potential_ep);
+    }
+    return;
 }
 void Solver::addEP2(int i)
 {
-    // ep.erase(pair<int,pii>(placement[i].first.x,pii(placement[i].first.y,placement[i].first.z)));
-    // coords ob1;
-    // auto p = placement[i];
-    // // placement[i].first=def;
-    // ob1.x=p.first.x+placement[i].second.l;
-    // ob1.y=p.first.y;
-    // ob1.z=p.first.z+p.second.h;
-    // vector<pair<pair<int,int>,pair<int,int>>>faces,faces_checked;
-    // For(j,i)
-    // {
-    //     faces.push_back(make_pair(make_pair(placement[j].first.x,placement[j].first.y),make_pair(placement[j].first.y+placement[j].second.b,placement[j].first.z+placement[j].second.h)));
-    // }
-    // sort(faces.begin(),faces.end(),check);
-    // For(j,i)
-    // {
-    //     int x1=faces[j].first.first;
-    //     // int y1=faces[j].second.first;
-    //     int z1=faces[j].second.second;
-    //     if(ob1.z<z1 || ob1.x>x1)
-    //     continue;
-    //     if(((ob1.y>=faces[j].first.second) && (ob1.y<=faces[j].second.first))==false)
-    //     continue;
-    //     int t=0;
-    //     for(auto yy:placement)
-    //     {
-    //         int x=yy.first.x;
-    //         int y=yy.first.y;
-    //         int z=yy.first.z;
-    //         if(ob1.x<x && x<x1 && z1>yy.first.z && z1<yy.first.z+yy.second.h)
-    //         t=1;
-    //     }
-    //     // if(t==0)
-    //     if(t==0)
-    //     {
-    //         coords d;
-    //         d.x=ob1.x;
-    //         d.y=ob1.y;
-    //         d.z=faces[j].second.second;
-    //         auto r =getResidueSpace(d);
-    //         if(r.first*r.second.first*r.second.second!=0)ep[convertCoords(d)] = r;
-    //     }
-    //     // faces_checked.push_back(faces[j]);
-    // }
-
     coords ob1, ob2, ob3;
     auto p = placement[i];
     // p.first = def;
@@ -697,14 +748,14 @@ void Solver::addEP2(int i)
     projection_neg_x_advanced(advanced_eps, ob3, i);
     projection_neg_y_advanced(advanced_eps, ob3, i);
 
-    for(auto x: advanced_eps){
+    for (auto x : advanced_eps)
+    {
         auto r = getResidueSpace(x);
-        if((r.first > RESIDUE_THRESHOLD) and (r.second.first > RESIDUE_THRESHOLD) and (r.second.second) > RESIDUE_THRESHOLD)
+        if ((r.first > RESIDUE_THRESHOLD) and (r.second.first > RESIDUE_THRESHOLD) and (r.second.second) > RESIDUE_THRESHOLD)
             ep[convertCoords(x)] = r;
     }
 
-    placement[i] = p; 
-    
+    placement[i] = p;
 }
 void Solver::addEP(int i)
 {
@@ -968,51 +1019,19 @@ bool Solver::checkGravity(coords e, Box b)
 
     return true; // No overlap, gravity applies
 }
-void Solver:: gravity_pull(int i)
+void Solver::gravity_pull(int i)
 {
-    pair<int,int>x1_min=make_pair(placement[i].first.x,placement[i].first.y),x1_max={placement[i].first.x+placement[i].second.l,placement[i].first.y+placement[i].second.b};
-    int m=0;
-    for(auto x:surfaces[placement[i].first.box])
+    pair<int, int> x1_min = make_pair(placement[i].first.x, placement[i].first.y), x1_max = {placement[i].first.x + placement[i].second.l, placement[i].first.y + placement[i].second.b};
+    int m = 0;
+    for (auto x : surfaces[placement[i].first.box])
     {
-        pair<int,pair<pair<int,int>,pair<int,int>>>p=x;
-        pair<int,int>x2_min=make_pair(p.second.first.first,p.second.first.second),x2_max={p.second.second.first,p.second.second.second};
-        if(x1_max.first>x2_min.first && x1_min.first<x2_max.first && x1_max.second>x2_min.second && x1_min.second<x2_max.second && x.first<=placement[i].first.z)
-        m=max(m,x.first);
+        pair<int, pair<pair<int, int>, pair<int, int>>> p = x;
+        pair<int, int> x2_min = make_pair(p.second.first.first, p.second.first.second), x2_max = {p.second.second.first, p.second.second.second};
+        if (x1_max.first > x2_min.first && x1_min.first < x2_max.first && x1_max.second > x2_min.second && x1_min.second < x2_max.second && x.first <= placement[i].first.z)
+            m = max(m, x.first);
     }
-    placement[i].first.z=m;
+    placement[i].first.z = m;
 }
-
-// void Solver::gravity_pull(int i)
-// {
-//     auto x1_min = make_pair(placement[i].first.x, placement[i].first.y);
-//     auto x1_max = make_pair(placement[i].first.x + placement[i].second.l, placement[i].first.y + placement[i].second.b);
-
-//     int m = 0;
-//     // Find the maximum z-coordinate of overlapping surfaces below the current box
-
-//     for (auto x : surfaces[placement[i].first.box])
-//     {
-//         auto p = x;
-//         auto x2_min = make_pair(p.second.first.first, p.second.first.second);
-//         auto x2_max = make_pair(p.second.second.first, p.second.second.second);
-
-//         // Check for overlap and ensure the surface is below the current z-coordinate
-//         bool is_overlapping = x1_max.first > x2_min.first &&
-//                               x1_min.first < x2_max.first &&
-//                               x1_max.second > x2_min.second &&
-//                               x1_min.second < x2_max.second;
-
-//         if (is_overlapping && p.first <= placement[i].first.z)
-//         {
-//             m = max(m, p.first);
-//         }
-//     }
-
-//     placement[i].first.z = m;
-//     // c+=1-checkGravity(placement[i].first,placement[i].second);
-// }
-
-// double weightz = 0.2;
 
 int residueFunc(coords c, Box b, Solver *s)
 {
@@ -1027,25 +1046,26 @@ int residueFunc(coords c, Box b, Solver *s)
 void ScoredSolver::solve()
 {
     // Initial Solve
-    insertionCounter.assign(data.size()+5, 0);
-    #ifndef GENETIC
-    #ifdef OLD_SORT
+    insertionCounter.assign(data.size() + 5, 0);
+#ifndef GENETIC
+#ifdef OLD_SORT
     sort(data.begin(), data.end(), this->sorter.val);
-    #endif
-    #ifndef OLD_SORT
+#endif
+#ifndef OLD_SORT
     this->sorter.val(data);
-    #endif
-    #endif
-    #ifdef DATA_ORDERING
+#endif
+#endif
+#ifdef DATA_ORDERING
     cout << "Data ordering:" << endl;
-    for(auto it: data){
+    for (auto it : data)
+    {
         // cout << it.ID << "," << score[it.ID] << " ";
         cout << it.ID << " ";
     }
     cout << endl;
-    #endif
-    For(i, ULDl.size()) ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
-    For(i, data.size())
+#endif
+    for(int i=0;i<ULDl.size();i++) ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
+    for(int i=0;i<data.size();i++)
     {
         // Construct Economy Package and Box Map
         if (!data[i].isPriority)
@@ -1096,8 +1116,9 @@ void ScoredSolver::solve()
         // update vals
         if (best.first == -INF)
             continue;
-        insertionCounter[data[i].ID]+=1;
-        if (data[i].isPriority){
+        insertionCounter[data[i].ID] += 1;
+        if (data[i].isPriority)
+        {
             ULDHasPriority[best.second.first.box] = true;
         }
         else
@@ -1132,14 +1153,15 @@ void ScoredSolver::solve()
     //     }
     // }
     cout << "Base Solution Cost: " << this->cost() << endl;
-    #ifdef DATA_ORDERING
+#ifdef DATA_ORDERING
     cout << "Data ordering:" << endl;
-    for(auto it: data){
+    for (auto it : data)
+    {
         // cout << it.ID << "," << score[it.ID] << " ";
         cout << it.ID << " ";
     }
     cout << endl;
-    #endif
+#endif
     bestCost = this->cost();
     // cout << bestCost;
     // return;
@@ -1151,14 +1173,17 @@ void ScoredSolver::solve()
     int lastChangeIter = -1;
     int reinitializeIter = 100, noChangeThreshold = 10;
     int solverTime = static_cast<int>(time(nullptr));
-    for(int i = 1; i <= iterations; i++){
+    for (int i = 1; i <= iterations; i++)
+    {
         cout << "Iteration " << i << " started" << endl;
-        if(i%reinitializeIter == 1 || i - lastChangeIter >= noChangeThreshold){
+        if (i % reinitializeIter == 1 || i - lastChangeIter >= noChangeThreshold)
+        {
             cout << "Reinitializing at iteration " << i << endl;
             reinitialize(true, 2.0, 25);
             lastChangeIter = i;
         }
-        else{
+        else
+        {
             update_scores(i);
         }
         // Solver new_solver(this->sorter, this->merit, this->data, this->originalUldList);
@@ -1166,7 +1191,8 @@ void ScoredSolver::solve()
         // cout << "New solver costs me " << new_solver.cost() << endl;
         optimize(i);
         cout << "Iteration " << i << " had a cost " << this->cost() << endl;
-        if(this->cost() > bestCost){
+        if (this->cost() > bestCost)
+        {
             cout << "Found new solution at iteration " << i << " with cost " << this->cost() << endl;
             stringstream ss;
             ss << "result_" << i << "_" << solverTime << ".txt";
@@ -1175,48 +1201,56 @@ void ScoredSolver::solve()
             lastChangeIter = i;
             bestSolution = lastInsertion;
             cout << "Updated base solution to " << endl;
-            for(auto it: bestSolution){
+            for (auto it : bestSolution)
+            {
                 cout << it << " ";
             }
         }
     }
 }
 
-void ScoredSolver::reinitialize(bool _swap, double k, int num_swap){
+void ScoredSolver::reinitialize(bool _swap, double k, int num_swap)
+{
     set<int> bestSolutionSet(bestSolution.begin(), bestSolution.end());
     vector<int> unselectedPackages;
-    for(auto it: economyPackages){
-        if(bestSolutionSet.find(it) != bestSolutionSet.end()){
-            score[it] = k*boxMap[it]->cost;
+    for (auto it : economyPackages)
+    {
+        if (bestSolutionSet.find(it) != bestSolutionSet.end())
+        {
+            score[it] = k * boxMap[it]->cost;
         }
-        else{
+        else
+        {
             unselectedPackages.push_back(it);
             score[it] = boxMap[it]->cost;
         }
     }
-    
-    vector<int> economyPackagesVec(economyPackages.begin(), economyPackages.end());
-    if(_swap){
-        for(int i = 0; i < num_swap; i++){
-            mt19937 mt(time(nullptr));
-            #define SWAP_DIFFERENT
-            #ifndef SWAP_DIFFERENT
-            int idx, idy;
-            do{
-                idx = mt()%economyPackagesVec.size();
-                idy = mt()%economyPackagesVec.size();
-            } while(idx == idy);
-            swap(score[economyPackagesVec[idx]], score[economyPackagesVec[idy]]);
-            #endif
-            #ifdef SWAP_DIFFERENT
-            int idx, idy;
-            do{
-                idx = mt()%bestSolution.size();
-                idy = mt()%unselectedPackages.size();
-            } while(idx == idy);
-            swap(score[bestSolution[idx]], score[unselectedPackages[idy]]);
-            #endif
 
+    vector<int> economyPackagesVec(economyPackages.begin(), economyPackages.end());
+    if (_swap)
+    {
+        for (int i = 0; i < num_swap; i++)
+        {
+            mt19937 mt(time(nullptr));
+#define SWAP_DIFFERENT
+#ifndef SWAP_DIFFERENT
+            int idx, idy;
+            do
+            {
+                idx = mt() % economyPackagesVec.size();
+                idy = mt() % economyPackagesVec.size();
+            } while (idx == idy);
+            swap(score[economyPackagesVec[idx]], score[economyPackagesVec[idy]]);
+#endif
+#ifdef SWAP_DIFFERENT
+            int idx, idy;
+            do
+            {
+                idx = mt() % bestSolution.size();
+                idy = mt() % unselectedPackages.size();
+            } while (idx == idy);
+            swap(score[bestSolution[idx]], score[unselectedPackages[idy]]);
+#endif
         }
     }
 }
@@ -1251,11 +1285,12 @@ void ScoredSolver::update_scores(int i)
     // Found highest myu and theta
     // cout << "Reached here" << endl;
     // cout.flush();
-    if(worst_loaded.second != -1 && best_unloaded.second != -1){
+    if (worst_loaded.second != -1 && best_unloaded.second != -1)
+    {
         score[worst_loaded.second] *= (0.5);
         score[best_unloaded.second] *= (1.5);
-        
-        cout << "Score of "<< best_unloaded.second << ":" << score[best_unloaded.second] << endl;
+
+        cout << "Score of " << best_unloaded.second << ":" << score[best_unloaded.second] << endl;
         swap(score[worst_loaded.second], score[best_unloaded.second]);
         cout << "Swapped " << worst_loaded.second << " and " << best_unloaded.second << "\n";
         cout << "Score of " << best_unloaded.second << ":" << score[best_unloaded.second] << endl;
@@ -1288,30 +1323,39 @@ void ScoredSolver::optimize(int _iter)
     ULD_blocking_boxes_x = set<int, function<bool(const int &, const int &)>>(compare_x_base);
     ULD_blocking_boxes_y = set<int, function<bool(const int &, const int &)>>(compare_y_base);
     ULD_blocking_boxes_z = set<int, function<bool(const int &, const int &)>>(compare_z_base);
-    surfaces.assign(ULDl.size(), set<pair<int,pair<pair<int,int>,pair<int,int>>>>());
+    surfaces.assign(ULDl.size(), set<pair<int, pair<pair<int, int>, pair<int, int>>>>());
     ULDHasPriority.assign(ULDl.size(), false);
     ep.clear();
 
-    // sort(data.begin(), data.end(), this->sorter.val);
-    #define SORT_WITH_MARKS
-    #ifdef SORT_WITH_MARKS
-    vector<int> mark(data.size()+5);
-    for(int i =0; i != data.size(); i++){
-        for(int j = 0; j != data.size(); j++){
-            if(data[i].isPriority || data[j].isPriority)continue;
-            if(data[i].cost < data[j].cost)continue;
-            vector<int> perm_i = {data[i].l, data[i].b, data[i].h}; sort(perm_i.begin(), perm_i.end());
-            vector<int> perm_j = {data[j].l, data[j].b, data[j].h}; sort(perm_j.begin(), perm_j.end());
-            if(perm_i[0] <= perm_j[0] && perm_i[1] <= perm_j[1] && perm_i[2] <= perm_j[2]){
-                if(!(perm_i[0] == perm_j[0] && perm_i[1] == perm_j[1] && perm_i[2] == perm_j[2]) && data[i].cost == data[j].cost){ // Ensure they don't correspond to the samme box either
+// sort(data.begin(), data.end(), this->sorter.val);
+#define SORT_WITH_MARKS
+#ifdef SORT_WITH_MARKS
+    vector<int> mark(data.size() + 5);
+    for (int i = 0; i != data.size(); i++)
+    {
+        for (int j = 0; j != data.size(); j++)
+        {
+            if (data[i].isPriority || data[j].isPriority)
+                continue;
+            if (data[i].cost < data[j].cost)
+                continue;
+            vector<int> perm_i = {data[i].l, data[i].b, data[i].h};
+            sort(perm_i.begin(), perm_i.end());
+            vector<int> perm_j = {data[j].l, data[j].b, data[j].h};
+            sort(perm_j.begin(), perm_j.end());
+            if (perm_i[0] <= perm_j[0] && perm_i[1] <= perm_j[1] && perm_i[2] <= perm_j[2])
+            {
+                if (!(perm_i[0] == perm_j[0] && perm_i[1] == perm_j[1] && perm_i[2] == perm_j[2]) && data[i].cost == data[j].cost)
+                { // Ensure they don't correspond to the samme box either
                     mark[data[j].ID]++;
                     break;
                 }
             }
         }
     }
-    
-    sort(data.begin(), data.end(), [&](Box a,Box b){
+
+    sort(data.begin(), data.end(), [&](Box a, Box b)
+         {
         if(b.isPriority and (not a.isPriority))return false;
         if(a.isPriority and (not b.isPriority))return true;
         // if(mark[a.ID] != mark[b.ID]) return mark[a.ID] < mark[b.ID];
@@ -1325,11 +1369,11 @@ void ScoredSolver::optimize(int _iter)
 
         // if(score[a.ID]!=score[b.ID])return score[a.ID]>score[b.ID];
         if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))<min(b.h,min(b.b,b.l));
-        return a.l*a.b*a.h > b.l*b.b*b.h;
-    });
-    #endif
-    #ifndef SORT_WITH_MARKS
-    sort(data.begin(), data.end(), [&](Box a, Box b){
+        return a.l*a.b*a.h > b.l*b.b*b.h; });
+#endif
+#ifndef SORT_WITH_MARKS
+    sort(data.begin(), data.end(), [&](Box a, Box b)
+         {
         if (a.isPriority && !b.isPriority)
             return true;
         if (!a.isPriority && b.isPriority)
@@ -1338,19 +1382,19 @@ void ScoredSolver::optimize(int _iter)
 
         if(score[a.ID]!=score[b.ID])return score[a.ID]>score[b.ID];
         if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))<min(b.h,min(b.b,b.l));
-        return a.l*a.b*a.h > b.l*b.b*b.h;
-    });
-    #endif
+        return a.l*a.b*a.h > b.l*b.b*b.h; });
+#endif
 
-    // this->sorter.val(data);
-    #ifdef DATA_ORDERING
+// this->sorter.val(data);
+#ifdef DATA_ORDERING
     cout << "Data ordering:" << endl;
-    for(auto it: data){
+    for (auto it : data)
+    {
         // cout << it.ID << "," << score[it.ID] << " ";
         cout << it.ID << " ";
     }
     cout << endl;
-    #endif
+#endif
     For(i, ULDl.size()) ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
     For(i, data.size())
     {

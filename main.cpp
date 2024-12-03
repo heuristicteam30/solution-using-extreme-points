@@ -184,12 +184,73 @@ void final_execution() {
     power_fac = power_fac_min;
     weightz = weightz_min;
     // ScoredSolver s(Final_Ht, Residue, dat, ULDList, 1000);
-    ScoredSolver s(Final_Ht, Residue, dat, ULDList, 0);
-    s.solve();
-    cout << "Writing minimum cost of " << -s.cost() << " for powerfac = " << power_fac << endl;
-    stringstream file_name;
-    file_name << "result_" << -s.cost() << ".csv";
-    s.writeToFile("new_result.csv");
+    int i;
+    vector<int>visited(7);
+    int TOTAL=0;
+    vector<vector<Box>>dataa(6);
+    dataa[0]=dat;
+    for(int i=0;i<6;i++)
+    {
+        // cout << dat.size();
+        ScoredSolver s(Final_Ht, Residue, dataa[i], ULDList, 0);
+        s.solve();
+        // cout.flush();
+        int usedVol = 0, ULDVol =0;
+        double maxef=0;int pack=-1;
+        for(int j=0;j<6;j++)
+        {
+            // cout << j << " ";
+            int vol =0;
+            for(int box:s.ULDPackages[j])
+            vol+=s.data[box].l*s.data[box].b*s.data[box].h;
+            double p=1.0*vol/s.ULDl[j].dim.l/s.ULDl[j].dim.b/s.ULDl[j].dim.h;
+            cout << p << "\n";
+            if(maxef<p && !visited[j])
+            {
+                maxef=p;
+                pack=j;
+            }
+        }
+        visited[pack]=1;
+        vector<Box>data1;
+        vector<Uld>ULD1;
+        ULDList[pack].maxWt=-1;
+        for(auto x:s.ULDPackages[pack])
+        data1.push_back(s.data[x]);
+        vector<Uld>U;
+        for(auto x:ULDList)
+        {
+            if(visited[x.ID-1])
+            continue;
+            U.push_back(x);
+        }
+        ULDList=U;
+        cout << U.size();
+        for(auto x:s.ULDPackages[pack])
+        TOTAL+=s.data[x].cost;
+        // cout << s.ULDPackages[pack].size() << " ";
+        vector<Box>data2;
+        int p=data1.size();
+        // cout << p << "\n";
+        for(int j=0;j<dat.size();j++)
+        {
+            int flag=0;
+            for(int k=0;k<p;k++)
+            {
+                if(dat[j].b==data1[k].b && dat[j].l==data1[k].l && dat[j].h==data1[k].h && dat[j].weight==data1[k].weight)
+                flag=1;
+            }
+            if(flag)continue;
+            data2.push_back(dat[j]);
+        }
+        // cout << data2.size();
+        dataa[i+1]=data2;
+    }
+    cout << TOTAL;
+    // cout << "Writing minimum cost of " << -s.cost() << " for powerfac = " << power_fac << endl;
+    // stringstream file_name;
+    // file_name << "result_" << -s.cost() << ".csv";
+    // s.writeToFile("new_result.csv");
     // weightz = weightz_min;
     // ScoredSolver s(Final_Ht, Residue, dat, ULDList, 1000);
     // s.solve();
