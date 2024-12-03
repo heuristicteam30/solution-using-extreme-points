@@ -20,6 +20,7 @@ vector<Uld> ULDList(6);
 vector<Box>dat(400);
 
 double weightz = 0.2;
+double power_fac = 1.0;
 
 const int LevelXYBoundWeight  =10;
 void final_execution() {
@@ -66,14 +67,6 @@ void final_execution() {
     };
     Sorter Ashish_Ht;
     Ashish_Ht.val = [](vector<Box>& data){
-        // bool is_pkg_contained(package &a, package &b) {
-		// vector<int> perm = {a.l, a.b, a.h}; sort(perm.begin(), perm.end());
-
-		// do {
-		// 	if (perm[0] <= b.l && perm[1] <= b.h && perm[2] <= b.b) return true;
-		// } while (next_permutation(perm.begin(), perm.end()));
-		// return false;
-	    // }
         vector<int> mark(data.size()+5);
         for(int i =0; i != data.size(); i++){
             for(int j = 0; j != data.size(); j++){
@@ -93,9 +86,17 @@ void final_execution() {
         sort(data.begin(), data.end(), [&](Box a,Box b){
             if(b.isPriority and (not a.isPriority))return false;
             if(a.isPriority and (not b.isPriority))return true;
-            if(mark[a.ID] != mark[b.ID]) return mark[a.ID] < mark[b.ID];
+            // if(mark[a.ID] != mark[b.ID] && abs(mark[a.ID] - mark[b.ID]) > 2) return mark[a.ID] < mark[b.ID];
             // if(a.isPriority and b.isPriority)return false;
-            if(a.cost!=b.cost)return a.cost>b.cost;
+            int vol1 = a.l*a.b*a.h, vol2 = b.l*b.b*b.h;
+            // double power_fac = 1.0;
+            double fac1 = pow(a.cost, power_fac)/(vol1*1.0), fac2 = pow(b.cost, power_fac)/(vol2*1.0);
+            // return fac1 > fac2;
+            // return a.cost > b.cost;
+
+            if(a.cost!=b.cost)return fac1 > fac2;
+            
+
             if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))<min(b.h,min(b.b,b.l));
             return a.l*a.b*a.h > b.l*b.b*b.h;
         });
@@ -170,7 +171,7 @@ void final_execution() {
     // s.solve();
     int _iter = 10;
     int CountPackages = 0, Cost = INF;
-    double weightz_min = 0.0;
+    double weightz_min = 0.07, power_fac_min = 1.0;
     // vector<Box> original_dat = dat; 
     // Output results
     // freopen("result.csv", "w", stdout);
@@ -178,22 +179,30 @@ void final_execution() {
     Sorter Final_Ht = Ashish_Ht;
     
     // for(weightz = 0.0; weightz <= 1.0; weightz += 0.01){
-    for(weightz= 0.07; weightz == 0.07; weightz += 0.1){
+    for(power_fac= 1.0; power_fac <= 5.0; power_fac += 0.05){
         Solver s(Final_Ht, Residue, dat, ULDList);
         s.solve();
-        cout << "Weightz: " << weightz << " gave me a cost of " << -s.cost() << endl;
+        cout << "Weightz: " << power_fac << " gave me a cost of " << -s.cost() << endl;
         cout.flush();
         // freopen("30998_result.csv", "w", stdout);
         if(-s.cost() <= Cost){
             Cost = -s.cost();
             weightz_min = weightz;
+            power_fac_min = power_fac;
         }
     }
-    weightz = weightz_min;
-    ScoredSolver s(Final_Ht, Residue, dat, ULDList, 10000);
+    power_fac = power_fac_min;
+    ScoredSolver s(Final_Ht, Residue, dat, ULDList, 0);
     s.solve();
-    cout << "Writing minimum cost of " << -s.cost() << " for weightz = " << weightz << endl;
+    cout << "Writing minimum cost of " << -s.cost() << " for powerfac = " << power_fac << endl;
+    stringstream file_name;
+    file_name << "result_" << -s.cost() << ".csv";
     s.writeToFile("new_result.csv");
+    // weightz = weightz_min;
+    // ScoredSolver s(Final_Ht, Residue, dat, ULDList, 1000);
+    // s.solve();
+    // cout << "Writing minimum cost of " << -s.cost() << " for weightz = " << weightz << endl;
+    // s.writeToFile("new_result.csv");
     return;
 
     // FILE* file = freopen("result.csv", "w", stdout);

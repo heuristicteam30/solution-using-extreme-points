@@ -1231,8 +1231,8 @@ void ScoredSolver::update_scores(int i){
     // cout << "Reached here" << endl;
     // cout.flush();
     if(worst_loaded.second != -1 && best_unloaded.second != -1){
-        score[worst_loaded.second] *= (1-alpha);
-        score[best_unloaded.second] *= (1+beta);
+        score[worst_loaded.second] *= (0.5);
+        score[best_unloaded.second] *= (1.5);
         
         cout << "Score of "<< best_unloaded.second << ":" << score[best_unloaded.second] << endl;
         swap(score[worst_loaded.second], score[best_unloaded.second]);
@@ -1252,6 +1252,7 @@ void ScoredSolver::optimize(int _iter){
     surfaces.clear();
     ULDHasPriority.clear();
     lastInsertion.clear();
+    lastInsertionSet.clear();
     def.x = def.y = def.z = def.box = -1;
     Box def_;
     def_.l = def_.b = def_.h = -1;
