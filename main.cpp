@@ -4,9 +4,14 @@
 using namespace std;
 vector<Uld> ULDList(6);
 vector<Box>dat(400);
+
+double weightz = 0.2;
+double power_fac = 1.0;
+
 const int LevelXYBoundWeight  =10;
 void final_execution() {
     #ifndef GENETIC
+    #ifdef OLD_SORTER
     Sorter Vol_Ht;
     Vol_Ht.val = [](Box a,Box b){
         if(b.isPriority and (not a.isPriority))return false;
@@ -34,10 +39,61 @@ void final_execution() {
         if (a.l * a.b == b.l * b.b) return a.h > b.h;
         return a.l * a.b > b.l * b.b;
     };
+    #endif
+    Sorter Vol_Ht;
+    Vol_Ht.val = [](vector<Box>& data){
+        sort(data.begin(), data.end(), [](Box a,Box b){
+            if(b.isPriority and (not a.isPriority))return false;
+            if(a.isPriority and (not b.isPriority))return true;
+            // if(a.isPriority and b.isPriority)return false;
+            if(a.cost!=b.cost)return a.cost>b.cost;
+            if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))<min(b.h,min(b.b,b.l));
+            return a.l*a.b*a.h > b.l*b.b*b.h;
+        });
+    };
+    Sorter Ashish_Ht;
+    Ashish_Ht.val = [](vector<Box>& data){
+        vector<int> mark(data.size()+5);
+        for(int i =0; i != data.size(); i++){
+            for(int j = 0; j != data.size(); j++){
+                if(data[i].isPriority || data[j].isPriority)continue;
+                if(data[i].cost <= data[j].cost)continue;
+                vector<int> perm_i = {data[i].l, data[i].b, data[i].h}; sort(perm_i.begin(), perm_i.end());
+                vector<int> perm_j = {data[j].l, data[j].b, data[j].h}; sort(perm_j.begin(), perm_j.end());
+                if(perm_i[0] <= perm_j[0] && perm_i[1] <= perm_j[1] && perm_i[2] <= perm_j[2]){
+                    if(!(perm_i[0] == perm_j[0] && perm_i[1] == perm_j[1] && perm_i[2] == perm_j[2]) && data[i].cost == data[j].cost){ // Ensure they don't correspond to the samme box either
+                        mark[data[j].ID]++;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        sort(data.begin(), data.end(), [&](Box a,Box b){
+            if(b.isPriority and (not a.isPriority))return false;
+            if(a.isPriority and (not b.isPriority))return true;
+            // if(mark[a.ID] != mark[b.ID] && abs(mark[a.ID] - mark[b.ID]) > 2) return mark[a.ID] < mark[b.ID];
+            if(mark[a.ID] != mark[b.ID]) return mark[a.ID] < mark[b.ID];
 
-    // Define merit functions for different evaluation criteria
-    Merit MinVol;  // Placeholder merit function
-    MinVol.val = [](coords c, Box b, Solver* s) {
+            // if(a.isPriority and b.isPriority)return false;
+            int vol1 = a.l*a.b*a.h, vol2 = b.l*b.b*b.h;
+            // double power_fac = 1.0;
+            double fac1 = pow(a.cost, power_fac)/(vol1*1.0), fac2 = pow(b.cost, power_fac)/(vol2*1.0);
+            // return fac1 > fac2;
+            // return a.cost > b.cost;
+
+            if(a.cost!=b.cost)return fac1 > fac2;
+            
+
+            if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))<min(b.h,min(b.b,b.l));
+            return a.l*a.b*a.h > b.l*b.b*b.h;
+        });
+    };
+
+    
+    //merits
+    Merit MinVol;//redundant
+    MinVol.val = [](coords c, Box b,Solver* s){
         return 1;
     };
 
@@ -96,39 +152,76 @@ void final_execution() {
     }
 
     // Solve the packing problem
-    Solver s(Vol_Ht, Residue, dat, ULDList);
     // Solver s(Vol_Ht, Residue, dat, ULDList);
+    
     // s.solve();
     // ScoredSolver s(Vol_Ht, Residue, dat, ULDList, 100);
-    s.solve();
-
+    // s.solve();
+    int _iter = 10;
+    int CountPackages = 0, Cost = INF;
+    double weightz_min = 0.07, power_fac_min = 1.0;
+    // vector<Box> original_dat = dat; 
     // Output results
-    freopen("result.csv", "w", stdout);
-    int CountPackages = 0, Cost = s.cost();
-    set<int> ULDPackages;
+    // freopen("result.csv", "w", stdout);
 
-    for (int i = 0; i < dat.size(); ++i) {
-        if (s.placement[i].first.x != -1) {
-            if (s.data[i].isPriority) 
-                ULDPackages.insert(s.placement[i].first.box);
-            CountPackages++;
-        }
-    }
-    cout << Cost << "," << CountPackages << "," << ULDPackages.size() << "\n";
+    Sorter Final_Ht = Ashish_Ht;
+    
+    // for(weightz = 0.0; weightz <= 1.0; weightz += 0.01){
+    //     for(power_fac= 3.0; power_fac <= 4.0; power_fac += 0.05){
+    //         Solver s(Final_Ht, Residue, dat, ULDList);
+    //         s.solve();
+    //         // cout << "Weightz: " << power_fac << " gave me a cost of " << -s.cost() << endl;
+    //         // cout.flush();
+    //         // freopen("30998_result.csv", "w", stdout);
+    //         if(-s.cost() <= Cost){
+    //             cout << "Weightz: " << weightz << " Powerfac: " << power_fac << " gave me a cost of " << -s.cost() << endl;
+    //             Cost = -s.cost();
+    //             weightz_min = weightz;
+    //             power_fac_min = power_fac;
+    //         }
+    //     }
+    // }
+    power_fac = power_fac_min;
+    weightz = weightz_min;
+    // ScoredSolver s(Final_Ht, Residue, dat, ULDList, 1000);
+    ScoredSolver s(Final_Ht, Residue, dat, ULDList, 0);
+    s.solve();
+    cout << "Writing minimum cost of " << -s.cost() << " for powerfac = " << power_fac << endl;
+    stringstream file_name;
+    file_name << "result_" << -s.cost() << ".csv";
+    s.writeToFile("new_result.csv");
+    // weightz = weightz_min;
+    // ScoredSolver s(Final_Ht, Residue, dat, ULDList, 1000);
+    // s.solve();
+    // cout << "Writing minimum cost of " << -s.cost() << " for weightz = " << weightz << endl;
+    // s.writeToFile("new_result.csv");
+    return;
 
-    for (int i = 0; i < dat.size(); ++i) {
-        if (s.placement[i].first.x == -1) {
-            cout << s.data[i].ID << ",NONE,-1,-1,-1,-1,-1,-1\n";
-        } else {
-            cout << s.data[i].ID << "," << s.placement[i].first.box + 1 << "," 
-                 << s.placement[i].first.x << "," << s.placement[i].first.y << "," 
-                 << s.placement[i].first.z << "," 
-                 << s.placement[i].second.l + s.placement[i].first.x << "," 
-                 << s.placement[i].second.b + s.placement[i].first.y << "," 
-                 << s.placement[i].second.h + s.placement[i].first.z << "\n";
-        }
-    }
+    // FILE* file = freopen("result.csv", "w", stdout);
+    // set<int> ULDPackages;
+    // for (int i = 0; i < dat.size(); ++i) {
+    //     if (s.placement[i].first.x != -1) {
+    //         if (s.data[i].isPriority)
+    //             ULDPackages.insert(s.placement[i].first.box);
+    //         CountPackages++;
+    //     }
+    // }
+    // cout << Cost << "," << CountPackages << "," << ULDPackages.size() << "\n";
 
+    // for (int i = 0; i < dat.size(); ++i) {
+    //     if (s.placement[i].first.x == -1) {
+    //         cout << "P-" << s.data[i].ID << ",NONE,-1,-1,-1,-1,-1,-1\n";
+    //     } else {
+    //         cout << "P-" << s.data[i].ID << "," << "U" << s.placement[i].first.box + 1 << "," 
+    //             << s.placement[i].first.x << "," << s.placement[i].first.y << "," 
+    //             << s.placement[i].first.z << "," 
+    //             << s.placement[i].second.l + s.placement[i].first.x << "," 
+    //             << s.placement[i].second.b + s.placement[i].first.y << "," 
+    //             << s.placement[i].second.h + s.placement[i].first.z << "\n";
+    //     }
+    // }
+    // cout.flush();
+    // fclose(file);
     #endif
 
     #ifdef GENETIC
