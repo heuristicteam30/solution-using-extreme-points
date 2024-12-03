@@ -2,66 +2,56 @@
 
 using namespace std;
 
-bool check(const pair<pair<int,int>,pair<int,int>>&a, const pair<pair<int,int>,pair<int,int>>&b)
-        {
-            int p=a.second.second;
-            int q=b.second.second;
-            // return true;
-            return (p>q);
-        }
-Solver::Solver(Sorter sorter_, Merit merit_, vector<Box> boxes, vector<Uld> ULD_)
+bool check(const pair<pair<int, int>, pair<int, int>> &a, const pair<pair<int, int>, pair<int, int>> &b)
+{ // custom comparator to sort
+    int p = a.second.second;
+    int q = b.second.second;
+    return (p > q); // returns box with higher height
+}
+Solver::Solver(Sorter sorter_, Merit merit_, vector<Box> boxes, vector<Uld> ULD_) // constructor
 {
     this->merit = merit_;
     this->sorter = sorter_;
-    //        this->merit.init(this);
-    //        this->sorter.init(this);
     this->data = boxes;
     def.x = def.y = def.z = def.box = -1;
     Box def_;
     def_.l = def_.b = def_.h = -1;
+
+    // initialization
     this->placement.assign(boxes.size(), pair<coords, Box>(def, def_));
     ULDl = ULD_;
     ULDPackages.assign(ULDl.size(), set<int>());
-    surfaces.assign(ULDl.size(), set<pair<int,pair<pair<int,int>,pair<int,int>>>>());
+    surfaces.assign(ULDl.size(), set<pair<int, pair<pair<int, int>, pair<int, int>>>>());
     ULDHasPriority.assign(ULDl.size(), false);
 }
 
 int Solver::cost()
 {
-    int c = 0;
-    int count=0;
-    set<int> priorityShipments;
-    For(i, data.size())
+    int totalcost = 0; // to store total cost of solution
+    set<int> priorityShipments; // to store ULDs containing priority packages
+    for (int i = 0; i < data.size(); i++)
     {
-        if (placement[i].first.x == -1)
+        if (placement[i].first.x == -1) // if the package is not placed in any ULD
         {
-            c -= data[i].cost;
-            if (data[i].isPriority)
-            {
-                count++;
-                c -= NON_PRIORITY_COST;
-            }
+            totalcost += data[i].cost; // add the cost of economy package to the toal
         }
         else
         {
-            //                c+=data[i].cost;
-
             if (data[i].isPriority)
-                priorityShipments.insert(placement[i].first.box);
+                priorityShipments.insert(placement[i].first.box); // insert the ULD-ID into the set "priorityShipments"
         }
     }
-    c -= priorityShipments.size() * PRIORITY_ULD_COST;
-    //        For(i,ULDl.size())c-=abs(ULDl[i].dim.l/2-ULDl[i].com.x)+abs(ULDl[i].dim.b/2-ULDl[i].com.y)+abs(ULDl[i].dim.h/2-ULDl[i].com.z);
-    //        cout<<c<<"\n";
-    // cout << "Priority left" << count << "\n";
-    // cout << priorityShipments.size() << "\n";
-    return c;
+    totalcost += priorityShipments.size() * PRIORITY_ULD_COST; //  add the cost of priority packages in different ULDs to the total cost
+    return totalcost;
 }
+
 bool Solver::checkCollision(coords e, Box b)
 {
-    // checks collision of prespective packages with all other packages of sam eULD
-    if (e.x + b.l >= ULDl[e.box].dim.l or e.y + b.b >= ULDl[e.box].dim.b or e.z + b.h >= ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
+    // checks collision of prespective packages with all other packages of same ULD along with weight constraint of the ULD
+    if (e.x + b.l > ULDl[e.box].dim.l or e.y + b.b > ULDl[e.box].dim.b or e.z + b.h >         ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
         return true;
+    
+    // check collision of the given packages with all other packages of same ULD
     for (auto i : ULDPackages[e.box])
     {
         auto x = placement[i];
@@ -75,12 +65,12 @@ bool Solver::checkCollision(coords e, Box b)
 
 void Solver::solve()
 {
-    // int c=0;
-    #ifndef GENETIC
+#ifndef GENETIC
     sort(data.begin(), data.end(), this->sorter.val);
-    #endif
-    For(i, ULDl.size()) ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
-    For(i, data.size())
+#endif
+    for (int i = 0; i < ULDl.size(); i++)
+        ep[pair<int, pair<int, pair<int, int>>>(i, pair<int, pair<int, int>>(0, pair<int, int>(0, 0)))] = pair<int, pair<int, int>>(ULDl[i].dim.l, pair<int, int>(ULDl[i].dim.b, ULDl[i].dim.h));
+    for (int i = 0; i < data.size(); i++)
     {
         Box b = data[i];
         pair<int, pair<coords, Box>> best;
@@ -88,7 +78,7 @@ void Solver::solve()
         vector<Box> perms(6);
         perms[0].l = b.l;
         perms[0].b = b.b;
-        perms[0].h = b.h; 
+        perms[0].h = b.h;
         perms[1].l = b.l;
         perms[1].h = b.b;
         perms[1].b = b.h;
@@ -113,7 +103,7 @@ void Solver::solve()
                 e.x = x.first.second.first;
                 e.y = x.first.second.second.first;
                 e.z = x.first.second.second.second;
-                if(checkCollision(e,p))
+                if (checkCollision(e, p)) // checks for overlapping if a package is placed on this ULD
                     continue;
                 p.isPriority = b.isPriority;
                 int score = this->merit.val(e, p, this);
@@ -127,18 +117,10 @@ void Solver::solve()
             ULDHasPriority[best.second.first.box] = true;
         placement[i] = best.second;
         ULDPackages[best.second.first.box].insert(i);
-        // int pp=placement[i].first.z;
         gravity_pull(i);
-        // if(pp!=placement[i].first.z)
-        // c++;
         addEP(i);
         update(i);
-        // if(placement[i].second==data[i])
-        // if(checkGravity(placement[i].first, placement[i].second))
-        // printf("error\n");
     }
-    // cout << c;
-
 }
 
 void Solver::update(int i)
@@ -150,14 +132,13 @@ void Solver::update(int i)
     ULDl[b].com.y += (placement[i].first.y + placement[i].second.b / 2) * data[i].weight;
     ULDl[b].com.z += (placement[i].first.z + placement[i].second.h / 2) * data[i].weight;
     ULDl[b].weight += data[i].weight;
-    surfaces[b].insert(make_pair(placement[i].first.z+placement[i].second.h,make_pair(make_pair(placement[i].first.x,placement[i].first.y),make_pair(placement[i].first.x + placement[i].second.l,placement[i].first.y + placement[i].second.b))));
+    surfaces[b].insert(make_pair(placement[i].first.z + placement[i].second.h, make_pair(make_pair(placement[i].first.x, placement[i].first.y), make_pair(placement[i].first.x + placement[i].second.l, placement[i].first.y + placement[i].second.b))));
 }
-
 
 vector<coords> Solver::getCOM()
 {
     vector<coords> r(ULDl.size());
-    For(i, r.size())
+    for (int i = 0; i < r.size(); i++)
     {
         if (ULDl[i].weight == 0)
         {
@@ -173,11 +154,12 @@ vector<coords> Solver::getCOM()
     return r;
 }
 
-pair<int, pii> Solver::getResidueSpace(coords src)
+pair<int, pair<int, int>> Solver::getResidueSpace(coords src)
 {
-    pair<int, pii> ret(beamprojectXPos(src).x - src.x, pii(beamprojectYPos(src).y - src.y, beamprojectZPos(src).z - src.z));
+    pair<int, pair<int, int>> ret(beamprojectXPos(src).x - src.x, pair<int, int>(beamprojectYPos(src).y - src.y, beamprojectZPos(src).z - src.z));
     return ret;
 }
+
 void Solver::initialise(coords &X, coords &ob, int x, int y, int z)
 {
     X.x = ob.x + x;
@@ -221,6 +203,7 @@ coords Solver::beamprojectYNeg(coords ob1)
     ans.box = ob1.box;
     return ans;
 }
+
 coords Solver::beamprojectXNeg(coords ob1)
 {
     coords p, q, r;
@@ -238,6 +221,7 @@ coords Solver::beamprojectXNeg(coords ob1)
     ans.box = ob1.box;
     return ans;
 }
+
 coords Solver::beamprojectZPos(coords ob1)
 {
     coords p, q, r;
@@ -255,6 +239,7 @@ coords Solver::beamprojectZPos(coords ob1)
     ans.box = ob1.box;
     return ans;
 }
+
 coords Solver::beamprojectYPos(coords ob1)
 {
     coords p, q, r;
@@ -272,6 +257,7 @@ coords Solver::beamprojectYPos(coords ob1)
     ans.box = ob1.box;
     return ans;
 }
+
 coords Solver::beamprojectXPos(coords ob1)
 {
     coords p, q, r;
@@ -289,55 +275,53 @@ coords Solver::beamprojectXPos(coords ob1)
     ans.box = ob1.box;
     return ans;
 }
+
 void Solver::addEP2(int i)
+{
+    // ep.erase(pair<int,pair<int,int>>(placement[i].first.x,pair<int,int>(placement[i].first.y,placement[i].first.z)));
+    coords ob1;
+    auto p = placement[i];
+    // placement[i].first=def;
+    ob1.x = p.first.x + placement[i].second.l;
+    ob1.y = p.first.y;
+    ob1.z = p.first.z + p.second.h;
+    vector<pair<pair<int, int>, pair<int, int>>> faces, faces_checked;
+    for (int j = 0; j < i; j++)
+    {
+        faces.push_back(make_pair(make_pair(placement[j].first.x, placement[j].first.y), make_pair(placement[j].first.y + placement[j].second.b, placement[j].first.z + placement[j].second.h)));
+    }
+    sort(faces.begin(), faces.end(), check);
+    for (int j = 0; j < i; j++)
+    {
+        int x1 = faces[j].first.first;
+        int z1 = faces[j].second.second;
+        if (ob1.z < z1 || ob1.x > x1)
+            continue;
+        if (((ob1.y >= faces[j].first.second) && (ob1.y <= faces[j].second.first)) == false)
+            continue;
+        int flag = 0;
+        for (auto yy : placement)
         {
-            // ep.erase(pair<int,pii>(placement[i].first.x,pii(placement[i].first.y,placement[i].first.z)));
-            coords ob1;
-            auto p = placement[i];
-            // placement[i].first=def;
-            ob1.x=p.first.x+placement[i].second.l;
-            ob1.y=p.first.y;
-            ob1.z=p.first.z+p.second.h;
-            vector<pair<pair<int,int>,pair<int,int>>>faces,faces_checked;
-            For(j,i)
-            {
-                faces.push_back(make_pair(make_pair(placement[j].first.x,placement[j].first.y),make_pair(placement[j].first.y+placement[j].second.b,placement[j].first.z+placement[j].second.h)));
-            }
-            sort(faces.begin(),faces.end(),check);
-            For(j,i)
-            {
-                int x1=faces[j].first.first;
-                // int y1=faces[j].second.first;
-                int z1=faces[j].second.second;
-                if(ob1.z<z1 || ob1.x>x1)
-                continue;
-                if(((ob1.y>=faces[j].first.second) && (ob1.y<=faces[j].second.first))==false)
-                continue;
-                int t=0;
-                for(auto yy:placement)
-                {
-                    int x=yy.first.x;
-                    int y=yy.first.y;
-                    int z=yy.first.z;
-                    if(ob1.x<x && x<x1 && z1>yy.first.z && z1<yy.first.z+yy.second.h)
-                    t=1;
-                }
-                // if(t==0)
-                if(t==0)
-                {
-                    coords d;
-                    d.x=ob1.x;
-                    d.y=ob1.y;
-                    d.z=faces[j].second.second;
-                    auto r =getResidueSpace(d);
-                    if(r.first*r.second.first*r.second.second!=0)ep[convertCoords(d)] = r;
-                }
-                // faces_checked.push_back(faces[j]);
-            }
+            int x = yy.first.x;
+            int y = yy.first.y;
+            int z = yy.first.z;
+            if (ob1.x < x && x < x1 && z1 > yy.first.z && z1 < yy.first.z + yy.second.h)
+                flag = 1;
         }
+        if (flag == 0)
+        {
+            coords d;
+            d.x = ob1.x;
+            d.y = ob1.y;
+            d.z = faces[j].second.second;
+            auto r = getResidueSpace(d);
+            if (r.first * r.second.first * r.second.second != 0)
+                ep[convertCoords(d)] = r;
+        }
+    }
+}
 void Solver::addEP(int i)
 {
-    // ep.erase(pair<int, pair<int, pii>>(placement[i].first.box, pair<int, pii>(placement[i].first.x, pii(placement[i].first.y, placement[i].first.z))));
     coords ob1;
     auto p = placement[i];
     placement[i].first = def;
@@ -381,6 +365,7 @@ void Solver::addEP(int i)
         ep[convertCoords(t)] = r;
     placement[i] = p;
 }
+
 void Solver::updateMaxBound(int i)
 {
     int b = placement[i].first.box;
@@ -388,6 +373,7 @@ void Solver::updateMaxBound(int i)
     ULDl[b].maxBound.y = max(ULDl[b].maxBound.y, placement[i].first.y + placement[i].second.b);
     ULDl[b].maxBound.z = max(ULDl[b].maxBound.z, placement[i].first.z + placement[i].second.h);
 }
+
 void Solver::updateResidue(int i)
 {
     // update residual space also to be done
@@ -417,51 +403,54 @@ int Solver::XBeamIntersectionWithBox(coords start, int ind)
 {
     int r = INF;
     int b = start.box;
-    For(i, 2) For(j, 2)
-    {
-        auto p = start;
-        p.y = min(p.y + i, ULDl[b].dim.b - 1);
-        p.z = min(p.z + j, ULDl[b].dim.h - 1);
-        int t = XRayIntersectionWithBox(p, ind);
-        if (t != -1)
+    for (int i = 0; i < 2; i++)
+        for (int j = 0; j < 2; j++)
         {
-            r = min(r, t);
+            auto p = start;
+            p.y = min(p.y + i, ULDl[b].dim.b - 1);
+            p.z = min(p.z + j, ULDl[b].dim.h - 1);
+            int t = XRayIntersectionWithBox(p, ind);
+            if (t != -1)
+            {
+                r = min(r, t);
+            }
         }
-    }
     return r == INF ? -1 : r;
 }
 int Solver::YBeamIntersectionWithBox(coords start, int ind)
 {
     int r = INF;
     int b = start.box;
-    For(i, 2) For(j, 2)
-    {
-        auto p = start;
-        p.x = min(p.x + i, ULDl[b].dim.l - 1);
-        p.z = min(p.z + j, ULDl[b].dim.h - 1);
-        int t = YRayIntersectionWithBox(p, ind);
-        if (t != -1)
+    for (int i = 0; i < 2; i++)
+        for (int j = 0; j < 2; j++)
         {
-            r = min(r, t);
+            auto p = start;
+            p.x = min(p.x + i, ULDl[b].dim.l - 1);
+            p.z = min(p.z + j, ULDl[b].dim.h - 1);
+            int t = YRayIntersectionWithBox(p, ind);
+            if (t != -1)
+            {
+                r = min(r, t);
+            }
         }
-    }
     return r == INF ? -1 : r;
 }
 int Solver::ZBeamIntersectionWithBox(coords start, int ind)
 {
     int r = INF;
     int b = start.box;
-    For(i, 2) For(j, 2)
-    {
-        auto p = start;
-        p.x = min(p.x + i, ULDl[b].dim.l - 1);
-        p.y = min(p.y + j, ULDl[b].dim.b - 1);
-        int t = ZRayIntersectionWithBox(p, ind);
-        if (t != -1)
+    for (int i = 0; i < 2; i++)
+        for (int j = 0; j < 2; j++)
         {
-            r = min(r, t);
+            auto p = start;
+            p.x = min(p.x + i, ULDl[b].dim.l - 1);
+            p.y = min(p.y + j, ULDl[b].dim.b - 1);
+            int t = ZRayIntersectionWithBox(p, ind);
+            if (t != -1)
+            {
+                r = min(r, t);
+            }
         }
-    }
     return r == INF ? -1 : r;
 }
 int Solver::XRayIntersectionWithBox(coords start, int ind)
@@ -550,102 +539,102 @@ coords Solver::rayProjectZPos(coords start)
 }
 bool Solver::checkGravity(coords e, Box b)
 {
-    // cout << surfaces.size();
-    if(e.z==0)
-    return false;
-    // return false;
-    // sort(surfaces.begin(),surfaces.end());
-    // auto start=surfaces.lower_bound(make_pair(e.z,make_pair(make_pair(0,0),make_pair(0,0))));
-    // auto end=surfaces.lower_bound(make_pair(e.z,make_pair(make_pair(3000,3000),make_pair(3000,3000))));
-    // for(auto x:surfaces)
-    // cout << x.first << " ";
-    // cout << "\n";
-    pair<int,int>x1_min=make_pair(e.x,e.y),x1_max={e.x+b.l,e.y+b.b};
-    int flag=0;
-    int c=0;
-    for(auto i:surfaces[e.box])
+    // If the z-coordinate is at the ground level, gravity does not apply
+    if (e.z == 0)
+        return false;
+
+    // Define the bounding box of the current element
+    std::pair<int, int> x1_min = {e.x, e.y};
+    std::pair<int, int> x1_max = {e.x + b.l, e.y + b.b};
+
+    int overlappingSurfacesCount = 0;
+
+    // Count the number of surfaces at the same box and z-coordinate
+    for (const auto &surface : surfaces[e.box])
     {
-        if((i).first!=e.z)
-        continue;
-        c++;
+        if (surface.first == e.z)
+            overlappingSurfacesCount++;
     }
-    if(c==0)
-    return true;
-    for(auto i:surfaces[e.box])
+
+    // If no overlapping surfaces are found at the z-coordinate, gravity applies
+    if (overlappingSurfacesCount == 0)
+        return true;
+
+    // Check for overlapping surfaces with the current box
+    for (const auto &surface : surfaces[e.box])
     {
-        if(i.first!=e.z)
-        continue;
-        pair<int,pair<pair<int,int>,pair<int,int>>>p=i;
-        pair<int,int>x2_min=make_pair(p.second.first.first,p.second.first.second),x2_max={p.second.second.first,p.second.second.second};
-        if(x1_max.first>x2_min.first && x1_min.first<x2_max.first && x1_max.second>x2_min.second && x1_min.second<x2_max.second)
-        flag=1;
+        if (surface.first != e.z)
+            continue;
+
+        auto [z, coords] = surface;
+        auto [minCoords, maxCoords] = coords;
+
+        std::pair<int, int> x2_min = minCoords;
+        std::pair<int, int> x2_max = maxCoords;
+
+        // Check for overlap between bounding boxes
+        if (x1_max.first > x2_min.first && x1_min.first < x2_max.first &&
+            x1_max.second > x2_min.second && x1_min.second < x2_max.second)
+        {
+            return false; // Overlap found, gravity does not apply
+        }
     }
-    if(flag==1)
-    return false;
-    return true;
+
+    return true; // No overlap, gravity applies
 }
-void Solver:: gravity_pull(int i)
+void Solver::gravity_pull(int i)
 {
-    pair<int,int>x1_min=make_pair(placement[i].first.x,placement[i].first.y),x1_max={placement[i].first.x+placement[i].second.l,placement[i].first.y+placement[i].second.b};
-    int m=0;
-    for(auto x:surfaces[placement[i].first.box])
+    auto x1_min = make_pair(placement[i].first.x, placement[i].first.y);
+    auto x1_max = make_pair(placement[i].first.x + placement[i].second.l, placement[i].first.y + placement[i].second.b);
+
+    int m = 0;
+    // Find the maximum z-coordinate of overlapping surfaces below the current box
+
+    for (auto x : surfaces[placement[i].first.box])
     {
-        pair<int,pair<pair<int,int>,pair<int,int>>>p=x;
-        pair<int,int>x2_min=make_pair(p.second.first.first,p.second.first.second),x2_max={p.second.second.first,p.second.second.second};
-        if(x1_max.first>x2_min.first && x1_min.first<x2_max.first && x1_max.second>x2_min.second && x1_min.second<x2_max.second && x.first<=placement[i].first.z)
-        m=max(m,x.first);
+        auto p = x;
+        auto x2_min = make_pair(p.second.first.first, p.second.first.second);
+        auto x2_max = make_pair(p.second.second.first, p.second.second.second);
+
+        // Check for overlap and ensure the surface is below the current z-coordinate
+        bool is_overlapping = x1_max.first > x2_min.first &&
+                              x1_min.first < x2_max.first &&
+                              x1_max.second > x2_min.second &&
+                              x1_min.second < x2_max.second;
+
+        if (is_overlapping && p.first <= placement[i].first.z)
+        {
+            m = max(m, p.first);
+        }
     }
-    placement[i].first.z=m;
+    // Update the z-coordinate of the placement to the highest valid surface level
+    placement[i].first.z = m;
 }
-// void Solver::gravity_pull(int i)
-// {
-//     auto x1_min = make_pair(placement[i].first.x, placement[i].first.y);
-//     auto x1_max = make_pair(placement[i].first.x + placement[i].second.l, placement[i].first.y + placement[i].second.b);
-    
-//     int m = 0;
-//     for (auto x : surfaces)
-//     {
-//         auto p = x;
-//         auto x2_min = make_pair(p.second.first.first, p.second.first.second);
-//         auto x2_max = make_pair(p.second.second.first, p.second.second.second);
 
-//         bool is_overlapping = x1_max.first > x2_min.first &&
-//                               x1_min.first < x2_max.first &&
-//                               x1_max.second > x2_min.second &&
-//                               x1_min.second < x2_max.second;
-
-//         if (is_overlapping && p.first <= placement[i].first.z)
-//         {
-//             m = max(m, p.first);
-//         }
-//     }
-
-//     placement[i].first.z = m;
-//     // c+=1-checkGravity(placement[i].first,placement[i].second);
-// }
-
-int residueFunc(coords c, Box b,Solver* s){
-    int r= 0;
-    r+=(1LL*(s->ULDHasPriority[c.box])*100000000000LL)*b.isPriority;
-    float relativeDifference =(s->ep[convertCoords(c)].first - b.l)/1.0/s->ep[convertCoords(c)].first+(s->ep[convertCoords(c)].second.first - b.b)/1.0/s->ep[convertCoords(c)].second.first+weightz*(s->ep[convertCoords(c)].second.second - b.h)/1.0/s->ep[convertCoords(c)].second.second;
-    relativeDifference*=1000000;
-//    float relativeDifference =(s->ep[convertCoords(c)].first - b.l)+(s->ep[convertCoords(c)].second.first - b.b)+0.1*(s->ep[convertCoords(c)].second.second - b.h);
-    r+=relativeDifference;
+int residueFunc(coords c, Box b, Solver *s)
+{
+    int r = 0;
+    r += (1LL * (s->ULDHasPriority[c.box]) * 100000000000LL) * b.isPriority;
+    float relativeDifference = (s->ep[convertCoords(c)].first - b.l) / 1.0 / s->ep[convertCoords(c)].first + (s->ep[convertCoords(c)].second.first - b.b) / 1.0 / s->ep[convertCoords(c)].second.first + weightz * (s->ep[convertCoords(c)].second.second - b.h) / 1.0 / s->ep[convertCoords(c)].second.second;
+    relativeDifference *= 1000000;
+    //    float relativeDifference =(s->ep[convertCoords(c)].first - b.l)+(s->ep[convertCoords(c)].second.first - b.b)+0.1*(s->ep[convertCoords(c)].second.second - b.h);
+    r += relativeDifference;
     return r;
 }
-
-
-void ScoredSolver::solve(){
+void ScoredSolver::solve()
+{
     // Initial Solve
-    insertionCounter.assign(data.size()+5, 0);
-    #ifndef GENETIC
+    insertionCounter.assign(data.size() + 5, 0);
+#ifndef GENETIC
     sort(data.begin(), data.end(), this->sorter.val);
-    #endif
-    For(i, ULDl.size()) ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
-    For(i, data.size())
+#endif
+    for (int i = 0; i < ULDl.size(); i++)
+        ep[pair<int, pair<int, pair<int, int>>>(i, pair<int, pair<int, int>>(0, pair<int, int>(0, 0)))] = pair<int, pair<int, int>>(ULDl[i].dim.l, pair<int, int>(ULDl[i].dim.b, ULDl[i].dim.h));
+    for (int i = 0; i < data.size(); i++)
     {
         // Construct Economy Package and Box Map
-        if(!data[i].isPriority){
+        if (!data[i].isPriority)
+        {
             boxMap[data[i].ID] = &data[i];
             economyPackages.insert(data[i].ID);
         }
@@ -656,7 +645,7 @@ void ScoredSolver::solve(){
         vector<Box> perms(6);
         perms[0].l = b.l;
         perms[0].b = b.b;
-        perms[0].h = b.h; 
+        perms[0].h = b.h;
         perms[1].l = b.l;
         perms[1].h = b.b;
         perms[1].b = b.h;
@@ -681,7 +670,7 @@ void ScoredSolver::solve(){
                 e.x = x.first.second.first;
                 e.y = x.first.second.second.first;
                 e.z = x.first.second.second.second;
-                if(checkCollision(e,p))
+                if (checkCollision(e, p))
                     continue;
                 p.isPriority = b.isPriority;
                 int score = this->merit.val(e, p, this);
@@ -693,69 +682,68 @@ void ScoredSolver::solve(){
             continue;
         cout << insertionCounter.size() << " " << data[i].ID << endl;
         cout.flush();
-        insertionCounter[data[i].ID]+=1;
-        if (data[i].isPriority){
+        insertionCounter[data[i].ID] += 1;
+        if (data[i].isPriority)
+        {
             ULDHasPriority[best.second.first.box] = true;
         }
-        else{
+        else
+        {
             lastInsertionSet.insert(data[i].ID);
             lastInsertion.push_back(data[i].ID);
         }
         placement[i] = best.second;
         ULDPackages[best.second.first.box].insert(i);
-        // int pp=placement[i].first.z;
         gravity_pull(i);
-        // if(pp!=placement[i].first.z)
-        // c++;
         addEP(i);
         update(i);
-        // if(placement[i].second==data[i])
-        // if(checkGravity(placement[i].first, placement[i].second))
-        // printf("error\n");
     }
 
     // Initialising the scores
-    for(auto i: economyPackages){
-        if(lastInsertionSet.find(i) == lastInsertionSet.end()){
-            score[i] = 3.0*boxMap[i]->cost;
+    for (auto i : economyPackages)
+    {
+        if (lastInsertionSet.find(i) == lastInsertionSet.end())
+        {
+            score[i] = 3.0 * boxMap[i]->cost;
         }
-        else{
+        else
+        {
             score[i] = boxMap[i]->cost;
         }
     }
-    for(int i = 1; i <= iterations; i++){
+    for (int i = 1; i <= iterations; i++)
+    {
         cout << "Iteration " << i << " started" << endl;
         cout.flush();
         update_scores(i);
         optimize(i);
         cout << "Iteration " << i << " had a cost " << this->cost() << endl;
     }
-    
-
-
-
-
-    
 }
 
 /*
-* i = number of iterations completed
-*/
-void ScoredSolver::update_scores(int i){
-    
+ * i = number of iterations completed
+ */
+void ScoredSolver::update_scores(int i)
+{
+
     pair<double, int> worst_loaded = {100000000.0, -1}, best_unloaded = {0.0, -1};
-    for(auto id : economyPackages){
-        if(lastInsertionSet.find(id) == lastInsertionSet.end()){
-            double theta = (1.0*boxMap[id]->cost)/(boxMap[id]->l * boxMap[id]->b * boxMap[id]->h * (1+i-insertionCounter[id]));
+    for (auto id : economyPackages)
+    {
+        if (lastInsertionSet.find(id) == lastInsertionSet.end())
+        {
+            double theta = (1.0 * boxMap[id]->cost) / (boxMap[id]->l * boxMap[id]->b * boxMap[id]->h * (1 + i - insertionCounter[id]));
             // cout << "Theta: "<< theta << " " << id << endl;
-            if(theta > best_unloaded.first){
+            if (theta > best_unloaded.first)
+            {
                 best_unloaded = {theta, id};
             }
-
         }
-        else{
-            double myu = (1.0*boxMap[id]->cost)/(boxMap[id]->l * boxMap[id]->b * boxMap[id]->h * (1+insertionCounter[id]));
-            if(myu < worst_loaded.first){
+        else
+        {
+            double myu = (1.0 * boxMap[id]->cost) / (boxMap[id]->l * boxMap[id]->b * boxMap[id]->h * (1 + insertionCounter[id]));
+            if (myu < worst_loaded.first)
+            {
                 worst_loaded = {myu, id};
             }
         }
@@ -763,22 +751,25 @@ void ScoredSolver::update_scores(int i){
     // Found highest myu and theta
     // cout << "Reached here" << endl;
     // cout.flush();
-    if(worst_loaded.second != -1 && best_unloaded.second != -1){
-        score[worst_loaded.second] *= (1-alpha);
-        score[best_unloaded.second] *= (1+beta);
-        
-        cout << "Score of "<< best_unloaded.second << ":" << score[best_unloaded.second] << endl;
+    if (worst_loaded.second != -1 && best_unloaded.second != -1)
+    {
+        score[worst_loaded.second] *= (1 - alpha);
+        score[best_unloaded.second] *= (1 + beta);
+
+        cout << "Score of " << best_unloaded.second << ":" << score[best_unloaded.second] << endl;
         swap(score[worst_loaded.second], score[best_unloaded.second]);
         cout << "Swapped " << worst_loaded.second << " and " << best_unloaded.second << "\n";
-        cout << "Score of "<< best_unloaded.second << ":" << score[best_unloaded.second] << endl;
+        cout << "Score of " << best_unloaded.second << ":" << score[best_unloaded.second] << endl;
     }
-    else{
+    else
+    {
         cout << "No possible swaps " << worst_loaded.second << " " << best_unloaded.second << endl;
         return;
     }
 }
 
-void ScoredSolver::optimize(int _iter){
+void ScoredSolver::optimize(int _iter)
+{
     // Re-Setup the solver
     placement.clear();
     ULDPackages.clear();
@@ -791,29 +782,28 @@ void ScoredSolver::optimize(int _iter){
     ULDl = this->originalUldList;
     placement.assign(data.size(), pair<coords, Box>(def, def_));
     ULDPackages.assign(ULDl.size(), set<int>());
-    surfaces.assign(ULDl.size(), set<pair<int,pair<pair<int,int>,pair<int,int>>>>());
+    surfaces.assign(ULDl.size(), set<pair<int, pair<pair<int, int>, pair<int, int>>>>());
     ULDHasPriority.assign(ULDl.size(), false);
-    
 
-
-    
-    sort(data.begin(), data.end(), [&](Box a, Box b){
+    sort(data.begin(), data.end(), [&](Box a, Box b)
+         {
         if (a.isPriority && !b.isPriority)
             return true;
         if (!a.isPriority && b.isPriority)
             return false;
         if(score[a.ID]!=score[b.ID])return score[a.ID]>score[b.ID];
         if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))<min(b.h,min(b.b,b.l));
-        return a.l*a.b*a.h > b.l*b.b*b.h;
-    });
+        return a.l*a.b*a.h > b.l*b.b*b.h; });
     cout << "Data ordering:" << endl;
-    for(auto it: data){
+    for (auto it : data)
+    {
         cout << it.ID << "," << score[it.ID] << " ";
         // cout << it.ID << " ";
     }
     cout << endl;
-    For(i, ULDl.size()) ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
-    For(i, data.size())
+    for (int i = 0; i < ULDl.size(); i++)
+        ep[pair<int, pair<int, pair<int, int>>>(i, pair<int, pair<int, int>>(0, pair<int, int>(0, 0)))] = pair<int, pair<int, int>>(ULDl[i].dim.l, pair<int, int>(ULDl[i].dim.b, ULDl[i].dim.h));
+    for (int i = 0; i < data.size(); i++)
     {
         // Construct Economy Package and Box Map
         Box b = data[i];
@@ -822,7 +812,7 @@ void ScoredSolver::optimize(int _iter){
         vector<Box> perms(6);
         perms[0].l = b.l;
         perms[0].b = b.b;
-        perms[0].h = b.h; 
+        perms[0].h = b.h;
         perms[1].l = b.l;
         perms[1].h = b.b;
         perms[1].b = b.h;
@@ -847,7 +837,7 @@ void ScoredSolver::optimize(int _iter){
                 e.x = x.first.second.first;
                 e.y = x.first.second.second.first;
                 e.z = x.first.second.second.second;
-                if(checkCollision(e,p))
+                if (checkCollision(e, p))
                     continue;
                 p.isPriority = b.isPriority;
                 int scores = this->merit.val(e, p, this);
@@ -857,34 +847,20 @@ void ScoredSolver::optimize(int _iter){
         // update vals
         if (best.first == -INF)
             continue;
-        insertionCounter[data[i].ID]+=1;
-        if (data[i].isPriority){
+        insertionCounter[data[i].ID] += 1;
+        if (data[i].isPriority)
+        {
             ULDHasPriority[best.second.first.box] = true;
         }
-        else{
+        else
+        {
             lastInsertionSet.insert(data[i].ID);
             lastInsertion.push_back(data[i].ID);
         }
         placement[i] = best.second;
         ULDPackages[best.second.first.box].insert(i);
-        // int pp=placement[i].first.z;
         gravity_pull(i);
-        // if(pp!=placement[i].first.z)
-        // c++;
         addEP(i);
         update(i);
-        // if(placement[i].second==data[i])
-        // if(checkGravity(placement[i].first, placement[i].second))
-        // printf("error\n");
     }
-
-    // Initialising the scores
-    // for(auto i: economyPackages){
-    //     if(lastInsertionSet.find(i) == lastInsertionSet.end()){
-    //         score[i] = 3*boxMap[i]->cost;
-    //     }
-    //     else{
-    //         score[i] = boxMap[i]->cost;
-    //     }
-    // }
 }

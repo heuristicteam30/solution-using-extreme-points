@@ -1,19 +1,5 @@
-//#include "bits/stdc++.h"
 #include "bits/stdc++.h"
 #include "solver.h"
-//#include "genetic.cpp"
-#define int long long
-#define For(i,n) for(int i=0; i<n;i++)
-#define FOR(k,i,n) for(int i=k; i<n;i++)
-#define vi vector<int>
-#define max(a,b) (a>b?a:b)
-#define maxP(a,b) (a.first>b.first?a:b)
-#define min(a,b) (a<b?a:b)
-#define INF 10000000000000000
-#define pii pair<int,int>
-#define NON_PRIORITY_COST 1000000
-#define PRIORITY_ULD_COST 5000
-#define RESIDUE_THRESHOLD 0
 #define convertCoords(pt) pair<int,pair<int,pii>>(pt.box,pair<int,pii>(pt.x,pii(pt.y,pt.z)))
 using namespace std;
 vector<Uld> ULDList(6);
@@ -110,15 +96,15 @@ void final_execution() {
     }
 
     // Solve the packing problem
-    // Solver s(Vol_Ht, Residue, dat, ULDList);
+    Solver s(Vol_Ht, Residue, dat, ULDList);
     // Solver s(Vol_Ht, Residue, dat, ULDList);
     // s.solve();
-    ScoredSolver s(Vol_Ht, Residue, dat, ULDList, 100);
+    // ScoredSolver s(Vol_Ht, Residue, dat, ULDList, 100);
     s.solve();
 
     // Output results
     freopen("result.csv", "w", stdout);
-    int CountPackages = 0, Cost = -s.cost();
+    int CountPackages = 0, Cost = s.cost();
     set<int> ULDPackages;
 
     for (int i = 0; i < dat.size(); ++i) {
