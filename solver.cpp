@@ -2,7 +2,7 @@
 
 using namespace std;
 
-extern double weightz;
+extern double weightz, power_fac;
 
 bool check(const pair<pair<int,int>,pair<int,int>>&a, const pair<pair<int,int>,pair<int,int>>&b)
         {
@@ -1136,15 +1136,12 @@ void ScoredSolver::solve(){
         cout << "Iteration " << i << " started" << endl;
         if(i%reinitializeIter == 1 || i - lastChangeIter >= noChangeThreshold){
             cout << "Reinitializing at iteration " << i << endl;
-            reinitialize(true, 2.0, 100);
+            reinitialize(true, 2.0, 25);
             lastChangeIter = i;
         }
         else{
             update_scores(i);
         }
-        
-
-        
         // Solver new_solver(this->sorter, this->merit, this->data, this->originalUldList);
         // new_solver.solve();
         // cout << "New solver costs me " << new_solver.cost() << endl;
@@ -1291,10 +1288,16 @@ void ScoredSolver::optimize(int _iter){
     sort(data.begin(), data.end(), [&](Box a,Box b){
         if(b.isPriority and (not a.isPriority))return false;
         if(a.isPriority and (not b.isPriority))return true;
-        if(mark[a.ID] != mark[b.ID]) return mark[a.ID] < mark[b.ID];
+        // if(mark[a.ID] != mark[b.ID]) return mark[a.ID] < mark[b.ID];
         // if(a.isPriority and b.isPriority)return false;
         // if(a.cost!=b.cost)return a.cost>b.cost;
-        if(score[a.ID]!=score[b.ID])return score[a.ID]>score[b.ID];
+        int vol1 = a.l*a.b*a.h, vol2 = b.l*b.b*b.h;
+        
+            // double power_fac = 1.0;
+        double fac1 = pow(score[a.ID], power_fac)/(vol1*1.0), fac2 = pow(score[b.ID], power_fac)/(vol2*1.0);
+        if(score[a.ID]!=score[b.ID])return fac1 > fac2;
+
+        // if(score[a.ID]!=score[b.ID])return score[a.ID]>score[b.ID];
         if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))<min(b.h,min(b.b,b.l));
         return a.l*a.b*a.h > b.l*b.b*b.h;
     });

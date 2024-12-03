@@ -87,6 +87,8 @@ void final_execution() {
             if(b.isPriority and (not a.isPriority))return false;
             if(a.isPriority and (not b.isPriority))return true;
             // if(mark[a.ID] != mark[b.ID] && abs(mark[a.ID] - mark[b.ID]) > 2) return mark[a.ID] < mark[b.ID];
+            if(mark[a.ID] != mark[b.ID]) return mark[a.ID] < mark[b.ID];
+
             // if(a.isPriority and b.isPriority)return false;
             int vol1 = a.l*a.b*a.h, vol2 = b.l*b.b*b.h;
             // double power_fac = 1.0;
@@ -179,19 +181,23 @@ void final_execution() {
     Sorter Final_Ht = Ashish_Ht;
     
     // for(weightz = 0.0; weightz <= 1.0; weightz += 0.01){
-    for(power_fac= 1.0; power_fac <= 5.0; power_fac += 0.05){
-        Solver s(Final_Ht, Residue, dat, ULDList);
-        s.solve();
-        cout << "Weightz: " << power_fac << " gave me a cost of " << -s.cost() << endl;
-        cout.flush();
-        // freopen("30998_result.csv", "w", stdout);
-        if(-s.cost() <= Cost){
-            Cost = -s.cost();
-            weightz_min = weightz;
-            power_fac_min = power_fac;
-        }
-    }
+    //     for(power_fac= 3.0; power_fac <= 4.0; power_fac += 0.05){
+    //         Solver s(Final_Ht, Residue, dat, ULDList);
+    //         s.solve();
+    //         // cout << "Weightz: " << power_fac << " gave me a cost of " << -s.cost() << endl;
+    //         // cout.flush();
+    //         // freopen("30998_result.csv", "w", stdout);
+    //         if(-s.cost() <= Cost){
+    //             cout << "Weightz: " << weightz << " Powerfac: " << power_fac << " gave me a cost of " << -s.cost() << endl;
+    //             Cost = -s.cost();
+    //             weightz_min = weightz;
+    //             power_fac_min = power_fac;
+    //         }
+    //     }
+    // }
     power_fac = power_fac_min;
+    weightz = weightz_min;
+    // ScoredSolver s(Final_Ht, Residue, dat, ULDList, 1000);
     ScoredSolver s(Final_Ht, Residue, dat, ULDList, 0);
     s.solve();
     cout << "Writing minimum cost of " << -s.cost() << " for powerfac = " << power_fac << endl;
