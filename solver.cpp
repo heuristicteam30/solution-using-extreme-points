@@ -4,6 +4,11 @@ using namespace std;
 
 extern double weightz, power_fac;
 
+/*
+*  @brief: check if two packages collide
+*  @param: e: coordinates of the first package
+*/
+
 bool check(const pair<pair<int,int>,pair<int,int>>&a, const pair<pair<int,int>,pair<int,int>>&b)
         {
             int p=a.second.second;
@@ -110,6 +115,7 @@ int Solver::cost()
 bool Solver::checkCollision(coords e, Box b)
 {
     // checks collision of prespective packages with all other packages of sam eULD
+    // if (e.x + b.l > ULDl[e.box].dim.l or e.y + b.b > ULDl[e.box].dim.b or e.z + b.h > ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
     if (e.x + b.l >= ULDl[e.box].dim.l or e.y + b.b >= ULDl[e.box].dim.b or e.z + b.h >= ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
         return true;
     for (auto i : ULDPackages[e.box])
@@ -1028,8 +1034,9 @@ void ScoredSolver::solve(){
     For(i, data.size())
     {
         // Construct Economy Package and Box Map
+        boxMap[data[i].ID] = &data[i];
         if(!data[i].isPriority){
-            boxMap[data[i].ID] = &data[i];
+            
             // cout << "Box ID: " << data[i].ID << endl;
             economyPackages.insert(data[i].ID);
         }
@@ -1078,6 +1085,8 @@ void ScoredSolver::solve(){
         insertionCounter[data[i].ID]+=1;
         if (data[i].isPriority){
             ULDHasPriority[best.second.first.box] = true;
+            lastInsertionSet.insert(data[i].ID);
+            lastInsertion.push_back(data[i].ID);
         }
         else{
             lastInsertionSet.insert(data[i].ID);
@@ -1129,6 +1138,7 @@ void ScoredSolver::solve(){
     // writeToFile("other_result.csv");
     // cout << "New Cost: " << this->cost() << endl;
     // assert(this->cost() == bestCost);
+    bestSolutionSwaps(10);
     int lastChangeIter = -1;
     int reinitializeIter = 100, noChangeThreshold = 10;
     int solverTime = static_cast<int>(time(nullptr));
@@ -1163,16 +1173,87 @@ void ScoredSolver::solve(){
     }
 }
 
+void ScoredSolver::bestSolutionSwaps(int swaps){
+    int lastPriority = 0;
+    for(lastPriority = 0; lastPriority < bestSolution.size(); lastPriority++){
+        if(!boxMap[bestSolution[lastPriority]]->isPriority){
+            lastPriority--;
+            break;
+        }
+    }
+    Sorter emptySorter;
+    emptySorter.val = [](vector<Box> &data){
+        return;
+    };
+    // Constructed Solution: 
+    vector<Box> constructedSolution;
+    for(int i = 0; i < bestSolution.size(); i++){
+        constructedSolution.push_back(*boxMap[bestSolution[i]]);
+    }
+    set<int> bestSolutionSet = set<int>(bestSolution.begin(), bestSolution.end());
+    for(auto it: economyPackages){
+        if(bestSolutionSet.find(it) == bestSolutionSet.end()){
+            constructedSolution.push_back(*boxMap[it]);
+        }
+    }
+
+
+    for(int i = 0; i < bestSolution.size(); i++){
+        for(int j = 0; j < i; j++){
+            // cout << "Swapping " << i << " " << j << endl;
+            swap(constructedSolution[i], constructedSolution[j]);
+            cout << constructedSolution.size() << endl;
+            Solver sr(emptySorter, this->merit, constructedSolution, this->originalUldList);
+            sr.solve();
+            cout << "Found a solution at swapping " << i << " " << j << " with cost " << sr.cost() << endl;
+            if(sr.cost() > bestCost){
+                // Maybe update best solution
+                bestCost = sr.cost();
+                cout << "Better solution at swapping " << i << " " << j << " with cost " << sr.cost() << endl;
+                sr.writeToFile("best_solution.txt");
+            }
+            else{
+                swap(constructedSolution[i], constructedSolution[j]);
+            }
+        }
+
+    }
+
+    
+    
+    
+    
+
+
+}
+
+
+// void ScoredSolver::insertedSwap(int _numSwaps){
+//     int numSwaps = _numSwaps;
+//     for(int i = 0; i < numSwaps; i++){
+//         mt19937 mt(time(nullptr));
+//         int idx, idy;
+//         do{
+//             idx = mt()%bestSolution.size();
+//             idy = mt()%bestSolution.size();
+//         } while(idx == idy);
+//         swap(score[bestSolution[idx]], score[bestSolution[idy]]);
+//     }
+
+
+// }
+
 void ScoredSolver::reinitialize(bool _swap, double k, int num_swap){
     set<int> bestSolutionSet(bestSolution.begin(), bestSolution.end());
     vector<int> unselectedPackages;
     for(auto it: economyPackages){
         if(bestSolutionSet.find(it) != bestSolutionSet.end()){
-            score[it] = k*boxMap[it]->cost;
+            score[it] = 1.0*boxMap[it]->cost;
         }
         else{
             unselectedPackages.push_back(it);
-            score[it] = boxMap[it]->cost;
+            score[it] = 0;
+            // score[it] = boxMap[it]->cost;
         }
     }
     

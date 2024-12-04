@@ -173,15 +173,15 @@ void final_execution() {
     // s.solve();
     int _iter = 10;
     int CountPackages = 0, Cost = INF;
-    double weightz_min = 0.07, power_fac_min = 1.0;
+    double weightz_min = 0.2, power_fac_min = 3.75;
     // vector<Box> original_dat = dat; 
     // Output results
     // freopen("result.csv", "w", stdout);
 
     Sorter Final_Ht = Ashish_Ht;
     
-    // for(weightz = 0.0; weightz <= 1.0; weightz += 0.01){
-    //     for(power_fac= 3.0; power_fac <= 4.0; power_fac += 0.05){
+    // for(weightz = 0.0; weightz <= 0.5; weightz += 0.02){
+    //     for(power_fac= 3.75; power_fac <= 3.75; power_fac += 0.05){
     //         Solver s(Final_Ht, Residue, dat, ULDList);
     //         s.solve();
     //         // cout << "Weightz: " << power_fac << " gave me a cost of " << -s.cost() << endl;
@@ -198,6 +198,7 @@ void final_execution() {
     power_fac = power_fac_min;
     weightz = weightz_min;
     // ScoredSolver s(Final_Ht, Residue, dat, ULDList, 1000);
+
     ScoredSolver s(Final_Ht, Residue, dat, ULDList, 0);
     s.solve();
     cout << "Writing minimum cost of " << -s.cost() << " for powerfac = " << power_fac << endl;
