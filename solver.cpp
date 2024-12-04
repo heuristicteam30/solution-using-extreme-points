@@ -77,6 +77,11 @@ bool Solver::writeToFile(string filename){
                 << placement[i].second.h + placement[i].first.z << "\n";
         }
     }
+    file << "Ordering: {";
+    for(auto it: data){
+        file << it.ID << ", ";
+    } 
+    file << "}\n";
     file.close();
     return true;
 }
@@ -115,8 +120,8 @@ int Solver::cost()
 bool Solver::checkCollision(coords e, Box b)
 {
     // checks collision of prespective packages with all other packages of sam eULD
-    // if (e.x + b.l > ULDl[e.box].dim.l or e.y + b.b > ULDl[e.box].dim.b or e.z + b.h > ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
-    if (e.x + b.l >= ULDl[e.box].dim.l or e.y + b.b >= ULDl[e.box].dim.b or e.z + b.h >= ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
+    // if (e.x + b.l >= ULDl[e.box].dim.l or e.y + b.b >= ULDl[e.box].dim.b or e.z + b.h >= ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
+    if (e.x + b.l > ULDl[e.box].dim.l or e.y + b.b > ULDl[e.box].dim.b or e.z + b.h > ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
         return true;
     for (auto i : ULDPackages[e.box])
     {
@@ -1122,7 +1127,7 @@ void ScoredSolver::solve(){
     //     }
     // }
     cout << "Base Solution Cost: " << this->cost() << endl;
-    #define DATA_ORDERING
+    // #define DATA_ORDERING
     #ifdef DATA_ORDERING
     cout << "Data ordering:" << endl;
     for(auto it: data){
@@ -1139,10 +1144,11 @@ void ScoredSolver::solve(){
     // writeToFile("other_result.csv");
     // cout << "New Cost: " << this->cost() << endl;
     // assert(this->cost() == bestCost);
+    // return;
+    // costDensityOptimize();
+    // return;
+    bestSolutionSwaps(50);
     return;
-    costDensityOptimize();
-    return;
-    bestSolutionSwaps(10);
     int lastChangeIter = -1;
     int reinitializeIter = 100, noChangeThreshold = 10;
     int solverTime = static_cast<int>(time(nullptr));
@@ -1289,37 +1295,40 @@ void ScoredSolver::bestSolutionSwaps(int swaps){
     }
     
 
-
-
+    FILE* file = freopen("analysis.txt", "w", stdout);
     for(int i = 0; i < bestSolution.size(); i++){
         int j;
-        if(swaps != -1){
-            j = max(static_cast<int>(0), i-50);
+        // if(swaps != -1){
+        //     j = max(static_cast<int>(0), i-swaps);
+        // }
+        // else{
+        //     j = 0;
+        // }
+        if(i % 50 == 0){
+            cout.flush();
         }
-        else{
-            j = 0;
-        }
-        for( ; j < i; j++){
+        cout << "Swapping " << i << "\n";
+        for(j = max(static_cast<int>(0), i-50); j < i; j++){
             // cout << "Swapping " << i << " " << j << endl;
             swap(constructedSolution[i], constructedSolution[j]);
-            cout << constructedSolution.size() << endl;
             Solver sr(emptySorter, this->merit, constructedSolution, this->originalUldList);
             sr.solve();
             // cout << "Found a solution at swapping " << i << " " << j << " with cost " << sr.cost() << endl;
-            FILE* file = freopen("analysis.txt", "w", stdout);
+            
             if(sr.cost() > bestCost){
                 // Maybe update best solution
                 bestCost = sr.cost();
-                cout << "swapping " << i << " " << j << " as " << constructedSolution[i].ID << " " << constructedSolution[j].ID << " with cost " << sr.cost() << endl;
+                cout << "swapping " << i << " " << j << " as " << constructedSolution[i].ID << " " << constructedSolution[j].ID << " with cost " << sr.cost() << "\n";
                 sr.writeToFile("best_solution.txt");
             }
             else{
                 swap(constructedSolution[i], constructedSolution[j]);
             }
-            fclose(file);
+            
         }
-
     }
+    cout.flush();
+    fclose(file);
 
     
     
