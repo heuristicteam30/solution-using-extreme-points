@@ -1138,6 +1138,9 @@ void ScoredSolver::solve(){
     // writeToFile("other_result.csv");
     // cout << "New Cost: " << this->cost() << endl;
     // assert(this->cost() == bestCost);
+    
+    costDensityOptimize();
+    return;
     bestSolutionSwaps(10);
     int lastChangeIter = -1;
     int reinitializeIter = 100, noChangeThreshold = 10;
@@ -1172,7 +1175,40 @@ void ScoredSolver::solve(){
         }
     }
 }
+/*
+* Trying to optimize the solution by checking the cost/volume of the packets left out.
+*/
+void ScoredSolver::costDensityOptimize(){
+    set<int> bestSolutionSet = set<int>(bestSolution.begin(), bestSolution.end());
+    set<pair<double, int>, greater<pair<double, int>>> costDensity;
+    for(auto it: economyPackages){
+        costDensity.insert({1.0*boxMap[it]->cost/(boxMap[it]->l*boxMap[it]->b*boxMap[it]->h), it});
+    }
+    int economyPackageCounter = 0, economyPackageCount = 0;
+    for(auto it: bestSolution){
+        if(!boxMap[it]->isPriority){
+            economyPackageCounter++;
+        }
+    }
+    int packageRanking = 0;
+    for(auto it: costDensity){
+        packageRanking++;
+        if(bestSolutionSet.find(it.second) == bestSolutionSet.end()){
+            // if(economyPackageCount < economyPackageCounter){
 
+                cout << "Density Rank: " << packageRanking << " Density: " << it.first << " ID: " << it.second << " Cost: " << boxMap[it.second]->cost << " Volume: " << boxMap[it.second]->l*boxMap[it.second]->b*boxMap[it.second]->h << endl;
+                // cout << "Found better cost density package which hasn't even been inserted yet with cost density " << it.first << " and ID " << it.second << endl;
+                // cout << "Current economy package count: " << economyPackageCount << endl;   
+                // cout << "Package is ranked at: " << packageRanking << endl;
+            // }
+            
+        }
+        else{
+            economyPackageCount++;
+        }
+    }
+
+}
 void ScoredSolver::bestSolutionSwaps(int swaps){
     int lastPriority = 0;
     for(lastPriority = 0; lastPriority < bestSolution.size(); lastPriority++){
@@ -1199,7 +1235,7 @@ void ScoredSolver::bestSolutionSwaps(int swaps){
 
 
     for(int i = 0; i < bestSolution.size(); i++){
-        for(int j = 0; j < i; j++){
+        for(int j = max(static_cast<int>(0), i-20); j < i; j++){
             // cout << "Swapping " << i << " " << j << endl;
             swap(constructedSolution[i], constructedSolution[j]);
             cout << constructedSolution.size() << endl;
