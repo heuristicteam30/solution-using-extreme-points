@@ -1122,6 +1122,7 @@ void ScoredSolver::solve(){
     //     }
     // }
     cout << "Base Solution Cost: " << this->cost() << endl;
+    #define DATA_ORDERING
     #ifdef DATA_ORDERING
     cout << "Data ordering:" << endl;
     for(auto it: data){
@@ -1138,7 +1139,7 @@ void ScoredSolver::solve(){
     // writeToFile("other_result.csv");
     // cout << "New Cost: " << this->cost() << endl;
     // assert(this->cost() == bestCost);
-    
+    return;
     costDensityOptimize();
     return;
     bestSolutionSwaps(10);
@@ -1175,6 +1176,30 @@ void ScoredSolver::solve(){
         }
     }
 }
+
+void ScoredSolver::arrangeDataFromIDVector(vector<int> idVector){
+    // Construct BoxMap
+    // boxMap.clear();
+    vector<Box> boxVector(data.size() +  10);
+    // boxMap.assign(data.size()+10, nullptr);
+    for(auto it: data){
+        cout << it.ID << ",";
+        boxVector[it.ID] = it;
+        // cout << boxMap[it.ID]->ID << " ";
+    }
+    for(auto  it: boxMap){
+        // cout << 
+        // cout << it.first << " " << it.second->ID << endl;
+    }
+    vector<Box> newData;
+    cout << endl;
+    for(auto it: idVector){
+
+        cout << it << "," << boxVector[it].ID << " ";
+        newData.push_back(boxVector[it]);
+    }
+    data = newData;
+}
 /*
 * Trying to optimize the solution by checking the cost/volume of the packets left out.
 */
@@ -1196,7 +1221,28 @@ void ScoredSolver::costDensityOptimize(){
         if(bestSolutionSet.find(it.second) == bestSolutionSet.end()){
             // if(economyPackageCount < economyPackageCounter){
 
-                cout << "Density Rank: " << packageRanking << " Density: " << it.first << " ID: " << it.second << " Cost: " << boxMap[it.second]->cost << " Volume: " << boxMap[it.second]->l*boxMap[it.second]->b*boxMap[it.second]->h << endl;
+                bool t = true;
+                for(auto it2: bestSolution){
+                    if(boxMap[it2]->isPriority){
+                        continue;
+                    }
+                    if(1.0*boxMap[it2]->cost/(boxMap[it2]->l*boxMap[it2]->b*boxMap[it2]->h) < it.first && boxMap[it2]->cost < boxMap[it.second]->cost){
+                        if(t){
+                            cout << "Density Rank: " << packageRanking << " Density: " << it.first << " ID: " << it.second << " Cost: " << boxMap[it.second]->cost << " Volume: " << boxMap[it.second]->l*boxMap[it.second]->b*boxMap[it.second]->h << endl;
+                            t = false;
+                        }
+                        // Stricter Inequality:
+                        int dimensions_1[3] = {boxMap[it.second]->l, boxMap[it.second]->b, boxMap[it.second]->h};
+                        int dimensions_2[3] = {boxMap[it2]->l, boxMap[it2]->b, boxMap[it2]->h};
+                        sort(dimensions_1, dimensions_1+3);
+                        sort(dimensions_2, dimensions_2+3);
+                        bool stricter = true;
+                        if(!stricter || dimensions_1[0] <= dimensions_2[0] && dimensions_1[1] <= dimensions_2[1] && dimensions_1[2] <= dimensions_2[2]){
+                            cout << "   - Can replaced " << it2 << " with cost density " << 1.0*boxMap[it2]->cost/(boxMap[it2]->l*boxMap[it2]->b*boxMap[it2]->h) << " and cost " << boxMap[it2]->cost << " and volume " << boxMap[it2]->l * boxMap[it2]->b * boxMap[it2]->h << endl;
+                        }
+                        // cout << "   - Can be replaced with " << it2 << " with cost density " << 1.0*boxMap[it2]->cost/(boxMap[it2]->l*boxMap[it2]->b*boxMap[it2]->h) << " and cost " << boxMap[it2]->cost << " and volume " << boxMap[it2]->l * boxMap[it2]->b * boxMap[it2]->h << endl;
+                    }
+                }
                 // cout << "Found better cost density package which hasn't even been inserted yet with cost density " << it.first << " and ID " << it.second << endl;
                 // cout << "Current economy package count: " << economyPackageCount << endl;   
                 // cout << "Package is ranked at: " << packageRanking << endl;
@@ -1209,6 +1255,8 @@ void ScoredSolver::costDensityOptimize(){
     }
 
 }
+/// @brief 
+/// @param swaps 
 void ScoredSolver::bestSolutionSwaps(int swaps){
     int lastPriority = 0;
     for(lastPriority = 0; lastPriority < bestSolution.size(); lastPriority++){
@@ -1227,30 +1275,48 @@ void ScoredSolver::bestSolutionSwaps(int swaps){
         constructedSolution.push_back(*boxMap[bestSolution[i]]);
     }
     set<int> bestSolutionSet = set<int>(bestSolution.begin(), bestSolution.end());
+    vector<Box> nonInsertedObjects;
+    // int firstNonInsertedIndex = constructedSolution.size();
     for(auto it: economyPackages){
         if(bestSolutionSet.find(it) == bestSolutionSet.end()){
-            constructedSolution.push_back(*boxMap[it]);
+            // constructedSolution.push_back(*boxMap[it]);
+            nonInsertedObjects.push_back(*boxMap[it]);
         }
     }
+    this->sorter.val(nonInsertedObjects);
+    for(auto it: nonInsertedObjects){
+        constructedSolution.push_back(it);
+    }
+    
+
 
 
     for(int i = 0; i < bestSolution.size(); i++){
-        for(int j = max(static_cast<int>(0), i-20); j < i; j++){
+        int j;
+        if(swaps != -1){
+            j = max(static_cast<int>(0), i-50);
+        }
+        else{
+            j = 0;
+        }
+        for( ; j < i; j++){
             // cout << "Swapping " << i << " " << j << endl;
             swap(constructedSolution[i], constructedSolution[j]);
             cout << constructedSolution.size() << endl;
             Solver sr(emptySorter, this->merit, constructedSolution, this->originalUldList);
             sr.solve();
-            cout << "Found a solution at swapping " << i << " " << j << " with cost " << sr.cost() << endl;
+            // cout << "Found a solution at swapping " << i << " " << j << " with cost " << sr.cost() << endl;
+            FILE* file = freopen("analysis.txt", "w", stdout);
             if(sr.cost() > bestCost){
                 // Maybe update best solution
                 bestCost = sr.cost();
-                cout << "Better solution at swapping " << i << " " << j << " with cost " << sr.cost() << endl;
+                cout << "swapping " << i << " " << j << " as " << constructedSolution[i].ID << " " << constructedSolution[j].ID << " with cost " << sr.cost() << endl;
                 sr.writeToFile("best_solution.txt");
             }
             else{
                 swap(constructedSolution[i], constructedSolution[j]);
             }
+            fclose(file);
         }
 
     }

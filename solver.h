@@ -144,6 +144,7 @@ public:
         boxMap.resize(boxes.size()+100);
     }
     void solve() override;
+    void arrangeDataFromIDVector(vector<int> idVector);
     void costDensityOptimize();
     void bestSolutionSwaps(int swaps);
     void reinitialize(bool _swap, double k = 2.0, int num_swap = SWAP_PAIRS);
