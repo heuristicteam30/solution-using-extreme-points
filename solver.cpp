@@ -1189,7 +1189,7 @@ void ScoredSolver::arrangeDataFromIDVector(vector<int> idVector){
     vector<Box> boxVector(data.size() +  10);
     // boxMap.assign(data.size()+10, nullptr);
     for(auto it: data){
-        cout << it.ID << ",";
+        // cout << it.ID << ",";
         boxVector[it.ID] = it;
         // cout << boxMap[it.ID]->ID << " ";
     }
@@ -1198,10 +1198,9 @@ void ScoredSolver::arrangeDataFromIDVector(vector<int> idVector){
         // cout << it.first << " " << it.second->ID << endl;
     }
     vector<Box> newData;
-    cout << endl;
+    // cout << endl;
     for(auto it: idVector){
-
-        cout << it << "," << boxVector[it].ID << " ";
+        // cout << it << "," << boxVector[it].ID << " ";
         newData.push_back(boxVector[it]);
     }
     data = newData;
@@ -1304,10 +1303,11 @@ void ScoredSolver::bestSolutionSwaps(int swaps){
         // else{
         //     j = 0;
         // }
-        if(i % 50 == 0){
-            cout.flush();
-        }
+        // if(i % 50 == 0){
+        //     cout.flush();
+        // }
         cout << "Swapping " << i << "\n";
+        cout.flush();
         for(j = max(static_cast<int>(0), i-50); j < i; j++){
             // cout << "Swapping " << i << " " << j << endl;
             swap(constructedSolution[i], constructedSolution[j]);
