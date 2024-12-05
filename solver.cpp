@@ -1295,7 +1295,7 @@ void ScoredSolver::bestSolutionSwaps(int swaps){
     
 
     FILE* file = freopen("analysis.txt", "w", stdout);
-    for(int i = 0; i < bestSolution.size(); i++){
+    for(int i = 0; i < constructedSolution.size()-50; i++){
         int j;
         // if(swaps != -1){
         //     j = max(static_cast<int>(0), i-swaps);
@@ -1319,6 +1319,7 @@ void ScoredSolver::bestSolutionSwaps(int swaps){
                 // Maybe update best solution
                 bestCost = sr.cost();
                 cout << "swapping " << i << " " << j << " as " << constructedSolution[i].ID << " " << constructedSolution[j].ID << " with cost " << sr.cost() << "\n";
+                this->data = sr.data;
                 sr.writeToFile("best_solution.txt");
             }
             else{
