@@ -42,15 +42,15 @@ struct Uld {
 class Solver{
 public:
     vi meritVar, sortVar;
-    map<pair<int,pair<int,pii>>,pair<int,pii>>ep;//(box,(x,(y,z))):(x,(y,z))
+    map<pair<int,pair<int,pii>>,pair<int,pii>> ep;//(box,(x,(y,z))):(x,(y,z))
     Merit merit;Sorter sorter;
-    vector<pair<coords,Box>>placement;//(bottom left corner, dimensions)
-    vector<set<int>>ULDPackages;//sees which package is placed in which ULD
-    vector<bool>ULDHasPriority;
-    vector<Box>data;
+    vector<pair<coords,Box>> placement;//(bottom left corner, dimensions)
+    vector<set<int>> ULDPackages;//sees which package is placed in which ULD
+    vector<bool> ULDHasPriority;
+    vector<Box> data;
     coords def;
-    vector<Uld>ULDl;
-    vector<set<pair<int,pair<pair<int,int>,pair<int,int>>>>>surfaces;
+    vector<Uld> ULDl;
+    vector<set<pair<int,pair<pair<int,int>,pair<int,int>>>>> surfaces;
 
     int solveFrom = 0;
     int solveTill;
@@ -75,6 +75,39 @@ public:
     
     // Constructor
     Solver(Sorter sorter_, Merit merit_, vector<Box> boxes,vector<Uld> ULD_);
+    Solver(Solver* other)
+    : meritVar(other->meritVar),
+      sortVar(other->sortVar),
+      ep(other->ep),
+      merit(other->merit),
+      sorter(other->sorter),
+      placement(other->placement),
+      ULDPackages(other->ULDPackages),
+      ULDHasPriority(other->ULDHasPriority),
+      data(other->data),
+      def(other->def),
+      ULDl(other->ULDl),
+      surfaces(other->surfaces),
+      solveFrom(other->solveFrom),
+      solveTill(other->solveTill),
+      compare_x(other->compare_x),
+      compare_y(other->compare_y),
+      compare_z(other->compare_z),
+      ULD_sorted_x(other->ULD_sorted_x),
+      ULD_sorted_y(other->ULD_sorted_y),
+      ULD_sorted_z(other->ULD_sorted_z),
+      compare_x_base(other->compare_x_base),
+      compare_y_base(other->compare_y_base),
+      compare_z_base(other->compare_z_base),
+      ULD_blocking_boxes_x(other->ULD_blocking_boxes_x),
+      ULD_blocking_boxes_y(other->ULD_blocking_boxes_y),
+      ULD_blocking_boxes_z(other->ULD_blocking_boxes_z) {
+        cout << "I was called" << endl;
+        // cout << static_cast<int>(ep == other.ep) << endl;
+
+
+      };
+
     bool writeToFile(string filename);
     int cost();
     bool checkCollision(coords e, Box b);

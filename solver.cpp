@@ -156,20 +156,26 @@ void Solver::solve()
     sort(data.begin(), data.end(), this->sorter.val);
     #endif
     #ifndef OLD_SORT
-    this->sorter.val(data);
+
+    
     #endif
     #endif
     
     
 
     if(solveFrom == 0){
+        this->sorter.val(data);
         for(int i=0; i<ULDl.size();i++) {
             ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
         }
     }
-    cout << "Solving from " << solveFrom << " to " << solveTill << endl;
+    
+    // for (auto &box : data) {
+    //     cout << box.ID << " ";
+    // }
     for(int i = solveFrom; i < solveTill; i++)
     {
+        // cout << ep.size() << " ";
         Box b = data[i];
         pair<int, pair<coords, Box>> best;
         best.first = -INF;
@@ -209,6 +215,7 @@ void Solver::solve()
                     best = pair<int, pair<coords, Box>>(score, pair<coords, Box>(e, p));
             }
         // update vals
+        // cout << best.first << " " << best.second.first.x << " " << best.second.first.y << " " << best.second.first.z << " " << best.second.second.l << " " << best.second.second.b << " " << best.second.second.h << endl;
         if (best.first == -INF)
             continue;
         if (data[i].isPriority)
@@ -229,6 +236,7 @@ void Solver::solve()
         // if(checkGravity(placement[i].first, placement[i].second))
         // printf("error\n");
     }
+    cout << "EP size: " << ep.size() << endl;
     // cout << c;
 
 }
@@ -694,7 +702,7 @@ void Solver::addEP2(int i)
     //     }
     //     // faces_checked.push_back(faces[j]);
     // }
-
+    // cout << placement[i].first.box << " ";
     coords ob1, ob2, ob3;
     auto p = placement[i];
     // p.first = def;
@@ -713,7 +721,11 @@ void Solver::addEP2(int i)
     ob3.x = p.first.x + p.second.l;
     ob3.y = p.first.y + p.second.b;
     ob3.z = p.first.z;
-
+    // cout << ob1.x << " " << ob1.y << " " << ob1.z << endl;
+    // cout << ob2.x << " " << ob2.y << " " << ob2.z << endl;
+    // cout << ob3.x << " " << ob3.y << " " << ob3.z << endl;
+    // cout << endl;
+    
     vector<coords> advanced_eps;
     projection_neg_y_advanced(advanced_eps, ob1, i);
     projection_neg_z_advanced(advanced_eps, ob1, i);
@@ -723,13 +735,13 @@ void Solver::addEP2(int i)
 
     projection_neg_x_advanced(advanced_eps, ob3, i);
     projection_neg_y_advanced(advanced_eps, ob3, i);
+    cout << advanced_eps.size() << " ";
 
     for(auto x: advanced_eps){
         auto r = getResidueSpace(x);
         if((r.first > RESIDUE_THRESHOLD) and (r.second.first > RESIDUE_THRESHOLD) and (r.second.second) > RESIDUE_THRESHOLD)
             ep[convertCoords(x)] = r;
     }
-
     placement[i] = p; 
     
 }

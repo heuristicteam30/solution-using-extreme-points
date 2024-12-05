@@ -214,25 +214,33 @@ void final_execution() {
     //     normalSolver.solve();
     //     cout << normalSolver.cost() << endl;
     // }
-
-    for(int i = 1; i != 50; i++){
+    // freopen("testing1.txt", "w", stdout);
+    Solver normalSolver(Final_Ht, Residue, dat, ULDList);
+    // normalSolver.setSolveTill(5);
+    normalSolver.solve();
+    cout << normalSolver.cost() << endl;
+    // cout << endl;
+    for(int i = 1; i != 2; i++){
+        // freopen("testing2.txt", "w", stdout);
         Solver cachedSolver(Final_Ht, Residue, dat, ULDList);
-        cachedSolver.setSolveTill(i);
-        cachedSolver.solve();
-        cachedSolver.resetSolveTill();
-        cachedSolver.setSolveFrom(i);
-        cachedSolver.solve();
-        cout << "Cost for " << i << " is " << cachedSolver.cost() << endl;
-
-        // Solver remainingSolver = cachedSolver;
+        // cachedSolver.setSolveTill(i);
+        // cachedSolver.solve();
+        // cachedSolver.resetSolveTill();
+        // cachedSolver.setSolveFrom(i);
+        // cachedSolver.solve();
+        // cout << "Cost for " << i << " is " << cachedSolver.cost() << endl;
+        Solver remainingSolver(cachedSolver);
+        // Solver remainingSolver(emptySorter, Residue, dat, ULDList);
+        // remainingSolver.meritVar = cachedSolver.meritVar;
+        // remainingSolver.sorter = cachedSolver.sorter;
+        // remainingSolver.placement = cachedSolver.placement;
+        // remainingSolver.solve();
         // remainingSolver.resetSolveTill();
         // remainingSolver.setSolveFrom(i);
-        // remainingSolver.solve();
-
+        remainingSolver.solve();
+        cout << remainingSolver.cost() << endl;
+        coords c1 = {0, 0, 0, 0}, c2 = {0, 0, 0, 1}, c3 = c1;
         // cout << "Cost for " << i << " is " << remainingSolver.cost() << endl;
-                
-
-        // cout << i << 
     }
 
 
