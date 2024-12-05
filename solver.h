@@ -52,6 +52,10 @@ public:
     vector<Uld>ULDl;
     vector<set<pair<int,pair<pair<int,int>,pair<int,int>>>>>surfaces;
 
+    int solveFrom = 0;
+    int solveTill;
+
+
     // data structures for additional EP creation
     function<bool(const int&, const int&)> compare_x;
     function<bool(const int&, const int&)> compare_y;   
@@ -77,6 +81,9 @@ public:
     bool check_collision_2D(int x1_min, int x1_max, int y1_min, int y1_max, int x2_min, int x2_max, int y2_min, int y2_max);
     bool checkGravity(coords e, Box b);
     void gravity_pull(int i);
+    void setSolveFrom(int _solveFrom);
+    void setSolveTill(int _solveTill);
+    void resetSolveTill();
     virtual void solve();
     void update(int i);
     
@@ -137,6 +144,28 @@ public:
     set<int> lastInsertionSet; /*Store the last insertion set for quick access*/
     set<int> economyPackages; /*Store the economy packages IDs*/
 
+    /*Caching Each Variable*/
+    map<pair<int,pair<int,pii>>,pair<int,pii>> cachedEp;
+    vector<pair<coords,Box>> cachedPlacement;
+    vector<bool> cachedULDHasPriority;
+    vector<set<int>> cachedULDPackages;
+
+    vector<set<int, function<bool(const int&, const int&)>>> cachedULD_sorted_x;
+    vector<set<int, function<bool(const int&, const int&)>>> cachedULD_sorted_y;
+    vector<set<int, function<bool(const int&, const int&)>>> cachedULD_sorted_z;
+
+    function<bool(const int&, const int&)> cachedcompare_x_base;
+    function<bool(const int&, const int&)> cachedcompare_y_base;
+    function<bool(const int&, const int&)> cachedcompare_z_base;
+
+    set<int, function<bool(const int&, const int&)>> cachedULD_blocking_boxes_x;
+    set<int, function<bool(const int&, const int&)>> cachedULD_blocking_boxes_y;
+    set<int, function<bool(const int&, const int&)>> cachedULD_blocking_boxes_z;
+
+
+    
+
+
     ScoredSolver(Sorter sorter_, Merit merit_, vector<Box> boxes,vector<Uld> ULD_, int iterations_):Solver(sorter_, merit_, boxes, ULD_), iterations(iterations_), originalUldList(ULD_){
         /*ID based indexing of both score and boxMap*/
         insertionCounter.resize(boxes.size()+5);
@@ -146,6 +175,7 @@ public:
     void solve() override;
     void arrangeDataFromIDVector(vector<int> idVector);
     void costDensityOptimize();
+    void createCachedSolver(int cachingIndex);
     void bestSolutionSwaps(int swaps);
     void reinitialize(bool _swap, double k = 2.0, int num_swap = SWAP_PAIRS);
     void update_scores(int i);

@@ -209,23 +209,54 @@ void final_execution() {
     // cout << idOrdering.size();
     // return;
     // ScoredSolver s(Final_Ht, Residue, dat, ULDList, 0);
-    ScoredSolver s_first(Final_Ht, Residue, dat, ULDList, 0);
-    
-    s_first.solve();
-    auto ordering = s_first.data;
-    vector<int> final_ordering;
-    for(auto it: ordering){
-        final_ordering.push_back(it.ID);
+    // for(int i = 0; i != 100; i++){
+    //     Solver normalSolver(Final_Ht, Residue, dat, ULDList);
+    //     normalSolver.solve();
+    //     cout << normalSolver.cost() << endl;
+    // }
+
+    for(int i = 1; i != 50; i++){
+        Solver cachedSolver(Final_Ht, Residue, dat, ULDList);
+        cachedSolver.setSolveTill(i);
+        cachedSolver.solve();
+        cachedSolver.resetSolveTill();
+        cachedSolver.setSolveFrom(i);
+        cachedSolver.solve();
+        cout << "Cost for " << i << " is " << cachedSolver.cost() << endl;
+
+        // Solver remainingSolver = cachedSolver;
+        // remainingSolver.resetSolveTill();
+        // remainingSolver.setSolveFrom(i);
+        // remainingSolver.solve();
+
+        // cout << "Cost for " << i << " is " << remainingSolver.cost() << endl;
+                
+
+        // cout << i << 
     }
 
-    ScoredSolver s(emptySorter, Residue, ordering, ULDList, 0);
-    // s.arrangeDataFromIDVector(final_ordering);
-    // s.arrangeDataFromIDVector(idOrdering);
-    s.solve();
-    cout << "Writing minimum cost of " << -s.cost() << " for powerfac = " << power_fac << endl;
-    stringstream file_name;
-    file_name << "result_" << -s.cost() << ".csv";
-    s.writeToFile("new_result.csv");
+
+
+
+
+
+    // ScoredSolver s_first(Final_Ht, Residue, dat, ULDList, 0);
+    
+    // s_first.solve();
+    // auto ordering = s_first.data;
+    // vector<int> final_ordering;
+    // for(auto it: ordering){
+    //     final_ordering.push_back(it.ID);
+    // }
+
+    // ScoredSolver s(emptySorter, Residue, ordering, ULDList, 0);
+    // // s.arrangeDataFromIDVector(final_ordering);
+    // // s.arrangeDataFromIDVector(idOrdering);
+    // s.solve();
+    // cout << "Writing minimum cost of " << -s.cost() << " for powerfac = " << power_fac << endl;
+    // stringstream file_name;
+    // file_name << "result_" << -s.cost() << ".csv";
+    // s.writeToFile("new_result.csv");
     // weightz = weightz_min;
     // ScoredSolver s(Final_Ht, Residue, dat, ULDList, 1000);
     // s.solve();

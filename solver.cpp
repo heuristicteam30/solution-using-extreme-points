@@ -23,6 +23,7 @@ Solver::Solver(Sorter sorter_, Merit merit_, vector<Box> boxes, vector<Uld> ULD_
     //        this->merit.init(this);
     //        this->sorter.init(this);
     this->data = boxes;
+    solveTill = boxes.size();
     def.x = def.y = def.z = def.box = -1;
     Box def_;
     def_.l = def_.b = def_.h = -1;
@@ -134,6 +135,18 @@ bool Solver::checkCollision(coords e, Box b)
     return false;
 }
 
+void Solver::setSolveFrom(int _solveFrom)
+{
+    solveFrom = _solveFrom;
+}
+void Solver::setSolveTill(int _solveTill)
+{
+    solveTill = _solveTill;
+}
+void Solver::resetSolveTill()
+{
+    solveTill = data.size();
+}
 void Solver::solve()
 {
     // int c=0;
@@ -146,10 +159,16 @@ void Solver::solve()
     this->sorter.val(data);
     #endif
     #endif
-
     
-    For(i, ULDl.size()) ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
-    For(i, data.size())
+    
+
+    if(solveFrom == 0){
+        for(int i=0; i<ULDl.size();i++) {
+            ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
+        }
+    }
+    cout << "Solving from " << solveFrom << " to " << solveTill << endl;
+    for(int i = solveFrom; i < solveTill; i++)
     {
         Box b = data[i];
         pair<int, pair<coords, Box>> best;
@@ -1434,6 +1453,11 @@ void ScoredSolver::update_scores(int i){
         return;
     }
 }
+
+
+// void ScoredSolver::cachedSolve(){
+
+// }
 
 void ScoredSolver::optimize(int _iter){
     // Re-Setup the solver
