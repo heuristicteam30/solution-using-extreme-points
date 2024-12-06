@@ -65,8 +65,12 @@ void final_execution() {
             return a.l*a.b*a.h > b.l*b.b*b.h;
         });
     };
-    Sorter Ashish_Ht;
-    Ashish_Ht.val = [](vector<Box>& data){
+    /**
+     * @brief This heuristic sorts the boxes,first by priority, then by marked, then by our suggested parameterized heuristic
+     *      where mark denotes an object for which is a combination of cost, volume and height.
+     */
+    Sorter Marks_Cost_Vol_Ht;
+    Marks_Cost_Vol_Ht.val = [](vector<Box>& data){
         vector<int> mark(data.size()+5);
         for(int i =0; i != data.size(); i++){
             for(int j = 0; j != data.size(); j++){
@@ -84,22 +88,24 @@ void final_execution() {
         }
         
         sort(data.begin(), data.end(), [&](Box a,Box b){
-            if(b.isPriority and (not a.isPriority))return false;
-            if(a.isPriority and (not b.isPriority))return true;
-            // if(mark[a.ID] != mark[b.ID] && abs(mark[a.ID] - mark[b.ID]) > 2) return mark[a.ID] < mark[b.ID];
-            if(mark[a.ID] != mark[b.ID]) return mark[a.ID] < mark[b.ID];
+            if(b.isPriority and (not a.isPriority)){
+                return false;
+            }
+            if(a.isPriority and (not b.isPriority)){
+                return true;
+            }
+            if(mark[a.ID] != mark[b.ID]){
+                return mark[a.ID] < mark[b.ID];
+            }
 
-            // if(a.isPriority and b.isPriority)return false;
             int vol1 = a.l*a.b*a.h, vol2 = b.l*b.b*b.h;
-            // double power_fac = 1.0;
             double fac1 = pow(a.cost, power_fac)/(vol1*1.0), fac2 = pow(b.cost, power_fac)/(vol2*1.0);
-            // return fac1 > fac2;
-            // return a.cost > b.cost;
-
-            if(a.cost!=b.cost)return fac1 > fac2;
-            
-
-            if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))<min(b.h,min(b.b,b.l));
+            if(a.cost!=b.cost){
+                return fac1 > fac2;
+            }
+            if(a.l*a.b*a.h==b.l*b.b*b.h){
+                return min(a.h,min(a.b,a.l))<min(b.h,min(b.b,b.l));
+            }
             return a.l*a.b*a.h > b.l*b.b*b.h;
         });
     };
@@ -178,7 +184,7 @@ void final_execution() {
     // Output results
     // freopen("result.csv", "w", stdout);
 
-    Sorter Final_Ht = Ashish_Ht;
+    Sorter Final_Ht = Marks_Cost_Vol_Ht;
     
     // for(weightz = 0.1; weightz <= 0.1; weightz += 0.02){
     //     for(power_fac= 3; power_fac <= 4; power_fac += 0.02){

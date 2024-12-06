@@ -216,7 +216,7 @@ public:
     void solveCached(vector<Box> data);
 
 
-    void bestSolutionSwaps(int swaps = 50, int ignoredObjects = 50);
+    void bestSolutionSwaps(int swaps = 50, int ignoredObjects = 50, bool emptySort = false);
     void reinitialize(bool _swap, double k = 2.0, int num_swap = SWAP_PAIRS);
     void update_scores(int i);
     void optimize(int _iter);
