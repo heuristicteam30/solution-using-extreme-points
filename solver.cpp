@@ -114,7 +114,7 @@ int Solver::cost()
             if (data[i].isPriority)
                 c -= PRIORITY_MISS_COST; // incur high cost if priority package remains unloaded
         }
-        else if(data[i].isPriority)
+        else if (data[i].isPriority)
         {
             priorityShipments.insert(placement[i].first.box);
         }
@@ -124,14 +124,13 @@ int Solver::cost()
 }
 bool Solver::checkCollision(coords e, Box b)
 {
-    // checks collision of prespective packages with all other packages of sam eULD
-    // if (e.x + b.l >= ULDl[e.box].dim.l or e.y + b.b >= ULDl[e.box].dim.b or e.z + b.h >= ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
-    if (e.x + b.l > ULDl[e.box].dim.l or e.y + b.b > ULDl[e.box].dim.b or e.z + b.h > ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
+    // checks collision of prespective packages with all other packages of same ULD
+    if (e.x + b.l > ULDl[e.box].dim.l or e.y + b.b > ULDl[e.box].dim.b or e.z + b.h > ULDl[e.box].dim.h)
     {
-        if (b.weight == 0)
-        {
-            assert(0 == 1);
-        }
+        return true;
+    }
+    if (ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
+    {
         return true;
     }
     for (auto i : ULDPackages[e.box])
@@ -1436,8 +1435,6 @@ void ScoredSolver::bestSolutionSwaps(int swaps, int ignoredObjects, bool emptySo
     fclose(file);
 }
 
-
-
 // void ScoredSolver::insertedSwap(int _numSwaps){
 //     int numSwaps = _numSwaps;
 //     for(int i = 0; i < numSwaps; i++){
@@ -1633,7 +1630,7 @@ void ScoredSolver::createCachedSolver(int _solveTill)
         ULD_sorted_x[best.second.first.box].insert(i);
         ULD_sorted_y[best.second.first.box].insert(i);
         ULD_sorted_z[best.second.first.box].insert(i);
-        
+
         gravity_pull(i);
         addEP2(i);
         // addEP(i);
@@ -1892,10 +1889,10 @@ void ScoredSolver::optimize(int _iter)
         ULD_sorted_x[best.second.first.box].insert(i);
         ULD_sorted_y[best.second.first.box].insert(i);
         ULD_sorted_z[best.second.first.box].insert(i);
-        
+
         gravity_pull(i);
         addEP2(i);
-        
+
         update(i);
     }
 }
