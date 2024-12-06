@@ -698,11 +698,7 @@ void Solver::addEP2(int i)
     ob3.x = p.first.x + p.second.l;
     ob3.y = p.first.y + p.second.b;
     ob3.z = p.first.z;
-    // cout << ob1.x << " " << ob1.y << " " << ob1.z << endl;
-    // cout << ob2.x << " " << ob2.y << " " << ob2.z << endl;
-    // cout << ob3.x << " " << ob3.y << " " << ob3.z << endl;
-    // cout << endl;
-    assert(placement[i].second.weight == data[i].weight);
+    
     vector<coords> advanced_eps;
     projection_neg_y_advanced(advanced_eps, ob1, i);
     projection_neg_z_advanced(advanced_eps, ob1, i);
@@ -719,7 +715,7 @@ void Solver::addEP2(int i)
             ep[convertCoords(x)] = r;
     }
     placement[i] = p; 
-    assert(placement[i].second.weight == data[i].weight);
+
 }
 void Solver::addEP(int i)
 {
@@ -1090,22 +1086,14 @@ void ScoredSolver::solve(){
         }
         placement[i] = best.second;
         ULDPackages[best.second.first.box].insert(i);
-        // ULDPackages[best.second.first.box].insert(i);
         ULD_sorted_x[best.second.first.box].insert(i);
         ULD_sorted_y[best.second.first.box].insert(i);
         ULD_sorted_z[best.second.first.box].insert(i);
-        // int pp=placement[i].first.z;
-        // cout << __LINE__ << endl;
-        assert(placement[i].second.weight==data[i].weight);
+        
         gravity_pull(i);
-        // if(pp!=placement[i].first.z)
-        // c++;
         addEP2(i);
         // addEP(i);
         update(i);
-        // if(placement[i].second==data[i])
-        // if(checkGravity(placement[i].first, placement[i].second))
-        // printf("error\n");
     }
 
     // Initialising the scores
@@ -1133,18 +1121,6 @@ void ScoredSolver::solve(){
     // cout << bestCost;
     // return;
     bestSolution = lastInsertion;
-    // optimize(0);
-    // writeToFile("other_result.csv");
-    // cout << "New Cost: " << this->cost() << endl;
-    // assert(this->cost() == bestCost);
-    // return;
-    // costDensityOptimize();
-    // return;
-    // bestSolutionSwaps(50);
-    // return;
-    // for(int i = 0; i != 10; i++){
-    //     optimize(i);
-    // }
     bestSolutionSwaps(50);
     return;
     {
@@ -1223,24 +1199,15 @@ void ScoredSolver::solve(){
     }
 }
 
+
+/*Allows arranging data of boxes according to the given order of IDs in an ID Vector*/
 void ScoredSolver::arrangeDataFromIDVector(vector<int> idVector){
-    // Construct BoxMap
-    // boxMap.clear();
     vector<Box> boxVector(data.size() +  10);
-    // boxMap.assign(data.size()+10, nullptr);
     for(auto it: data){
-        // cout << it.ID << ",";
         boxVector[it.ID] = it;
-        // cout << boxMap[it.ID]->ID << " ";
-    }
-    for(auto  it: boxMap){
-        // cout << 
-        // cout << it.first << " " << it.second->ID << endl;
     }
     vector<Box> newData;
-    // cout << endl;
     for(auto it: idVector){
-        // cout << it << "," << boxVector[it].ID << " ";
         newData.push_back(boxVector[it]);
     }
     data = newData;
@@ -1324,7 +1291,6 @@ void ScoredSolver::bestSolutionSwaps(int swaps){
     // int firstNonInsertedIndex = constructedSolution.size();
     for(auto it: economyPackages){
         if(bestSolutionSet.find(it) == bestSolutionSet.end()){
-            // constructedSolution.push_back(*boxMap[it]);
             nonInsertedObjects.push_back(*boxMap[it]);
         }
     }
@@ -1336,7 +1302,7 @@ void ScoredSolver::bestSolutionSwaps(int swaps){
     stringstream filename;
     filename << "analysis_" << time(nullptr) << ".txt";
     // filename.str().c_str()
-    FILE* file = freopen("analysis_2.txt", "w", stdout);
+    FILE* file = freopen("testing.txt", "w", stdout);
     for(int i = 0; i < constructedSolution.size()-50; i++){
         int j;
         // if(swaps != -1){
@@ -1372,7 +1338,7 @@ void ScoredSolver::bestSolutionSwaps(int swaps){
                     cout << it.weight << " ";
                 }
                 // this->data = sr.data;
-                this->writeToFile("best_solution_alt.txt");
+                this->writeToFile("28648_testing.txt");
             }
             else{
                 swap(constructedSolution[i], constructedSolution[j]);

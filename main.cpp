@@ -212,41 +212,7 @@ void final_execution() {
     s.solve();
     // s.createCachedSolver(dat.size());
     cout << s.cost() << endl;
-    // cout << "The cost I got is " << s.cost() << endl;
-    // for(int i = 0; i != 100; i++){
-    //     Solver normalSolver(Final_Ht, Residue, dat, ULDList);
-    //     normalSolver.solve();
-    //     cout << normalSolver.cost() << endl;
-    // }
-    // freopen("testing1.txt", "w", stdout);
     return;
-    Solver normalSolver(Final_Ht, Residue, dat, ULDList);
-    // normalSolver.setSolveTill(5);
-    normalSolver.solve();
-    cout << normalSolver.cost() << endl;
-    // cout << endl;
-    for(int i = 1; i != 2; i++){
-        // freopen("testing2.txt", "w", stdout);
-        Solver cachedSolver(Final_Ht, Residue, dat, ULDList);
-        // cachedSolver.setSolveTill(i);
-        // cachedSolver.solve();
-        // cachedSolver.resetSolveTill();
-        // cachedSolver.setSolveFrom(i);
-        // cachedSolver.solve();
-        // cout << "Cost for " << i << " is " << cachedSolver.cost() << endl;
-        Solver remainingSolver(cachedSolver);
-        // Solver remainingSolver(emptySorter, Residue, dat, ULDList);
-        // remainingSolver.meritVar = cachedSolver.meritVar;
-        // remainingSolver.sorter = cachedSolver.sorter;
-        // remainingSolver.placement = cachedSolver.placement;
-        // remainingSolver.solve();
-        // remainingSolver.resetSolveTill();
-        // remainingSolver.setSolveFrom(i);
-        remainingSolver.solve();
-        cout << remainingSolver.cost() << endl;
-        coords c1 = {0, 0, 0, 0}, c2 = {0, 0, 0, 1}, c3 = c1;
-        // cout << "Cost for " << i << " is " << remainingSolver.cost() << endl;
-    }
 
 
 
@@ -302,16 +268,6 @@ void final_execution() {
     // }
     // cout.flush();
     // fclose(file);
-    #endif
-
-    #ifdef GENETIC
-    vector<Packet> pc;
-    ParsePackets("packageNormal.txt", pc);
-    vector<struct ULD> u;
-    ParseULDs("ULDNormal.txt", u);
-
-    Genetic gen(u, pc);
-    gen.Execute();
     #endif
 }
 
