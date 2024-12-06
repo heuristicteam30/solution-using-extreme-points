@@ -124,19 +124,37 @@ int Solver::cost()
 }
 bool Solver::checkCollision(coords e, Box b)
 {
-    // checks collision of prespective packages with all other packages of same ULD
-    if (e.x + b.l > ULDl[e.box].dim.l or e.y + b.b > ULDl[e.box].dim.b or e.z + b.h > ULDl[e.box].dim.h)
-    {
+    // check if the box dimensions exceed the ULD dimensions
+    if (e.x + b.l > ULDl[e.box].dim.l)
         return true;
-    }
+    if (e.y + b.b > ULDl[e.box].dim.b)
+        return true;
+    if (e.z + b.h > ULDl[e.box].dim.h)
+        return true;
+
+    // check if the total weight exceeds the ULD capacity
     if (ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
-    {
         return true;
-    }
+
+    // check if the box dimensions exceed the Residual Space
+    auto r = ep[convertCoords(e)];
+    if (b.l > r.first)
+        return true;
+    if (b.b > r.second.first)
+        return true;
+    if (b.h > r.second.second)
+        return true;
+
+    // check collision of prespective packages with all other packages of same ULD
     for (auto i : ULDPackages[e.box])
     {
-        auto x = placement[i];
-        if ((x.first.x < b.l + e.x and x.first.y < b.b + e.y and x.first.z < b.h + e.z and e.x < x.first.x + x.second.l and e.y < x.first.y + x.second.b and e.z < x.first.z + x.second.h))
+        auto pkg = placement[i];
+        if ((pkg.first.x < b.l + e.x and
+             pkg.first.y < b.b + e.y and 
+             pkg.first.z < b.h + e.z and 
+             e.x < pkg.first.x + pkg.second.l and 
+             e.y < pkg.first.y + pkg.second.b and 
+             e.z < pkg.first.z + pkg.second.h))
         {
             return true;
         }
