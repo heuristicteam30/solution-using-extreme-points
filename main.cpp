@@ -11,8 +11,8 @@
 #define min(a,b) (a<b?a:b)
 #define INF 10000000000000000
 #define pii pair<int,int>
-#define NON_PRIORITY_COST 1000000
-#define PRIORITY_ULD_COST 5000
+#define PRIORITY_MISS_COST 1000000
+#define NEW_ULD_PRIORITY_COST 5000
 #define RESIDUE_THRESHOLD 0
 #define convertCoords(pt) pair<int,pair<int,pii>>(pt.box,pair<int,pii>(pt.x,pii(pt.y,pt.z)))
 using namespace std;
