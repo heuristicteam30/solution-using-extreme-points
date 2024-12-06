@@ -177,19 +177,21 @@ public:
     set<int> lastInsertionSet; /*Store the last insertion set for quick access*/
     set<int> economyPackages; /*Store the economy packages IDs*/
 
-    /*Caching Each Variable*/
+    /*Caching related: We use caching to ensure that all the var*/
     map<pair<int,pair<int,pii>>,pair<int,pii>> cachedEp;
     vector<pair<coords,Box>> cachedPlacement;
     vector<bool> cachedULDHasPriority;
     vector<set<int>> cachedULDPackages;
+    vector<Uld> cachedULDl;
+    vector<set<pair<int,pair<pair<int,int>,pair<int,int>>>>> cachedSurfaces;
 
     vector<set<int, function<bool(const int&, const int&)>>> cachedULD_sorted_x;
     vector<set<int, function<bool(const int&, const int&)>>> cachedULD_sorted_y;
     vector<set<int, function<bool(const int&, const int&)>>> cachedULD_sorted_z;
 
-    function<bool(const int&, const int&)> cachedcompare_x_base;
-    function<bool(const int&, const int&)> cachedcompare_y_base;
-    function<bool(const int&, const int&)> cachedcompare_z_base;
+    // function<bool(const int&, const int&)> cachedcompare_x_base;
+    // function<bool(const int&, const int&)> cachedcompare_y_base;
+    // function<bool(const int&, const int&)> cachedcompare_z_base;
 
     set<int, function<bool(const int&, const int&)>> cachedULD_blocking_boxes_x;
     set<int, function<bool(const int&, const int&)>> cachedULD_blocking_boxes_y;
@@ -208,7 +210,12 @@ public:
     void solve() override;
     void arrangeDataFromIDVector(vector<int> idVector);
     void costDensityOptimize();
+
     void createCachedSolver(int cachingIndex);
+    bool isCached = false;
+    void solveCached(vector<Box> data);
+
+
     void bestSolutionSwaps(int swaps);
     void reinitialize(bool _swap, double k = 2.0, int num_swap = SWAP_PAIRS);
     void update_scores(int i);
