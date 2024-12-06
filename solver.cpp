@@ -122,8 +122,12 @@ bool Solver::checkCollision(coords e, Box b)
 {
     // checks collision of prespective packages with all other packages of sam eULD
     // if (e.x + b.l >= ULDl[e.box].dim.l or e.y + b.b >= ULDl[e.box].dim.b or e.z + b.h >= ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
-    if (e.x + b.l > ULDl[e.box].dim.l or e.y + b.b > ULDl[e.box].dim.b or e.z + b.h > ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt)
+    if (e.x + b.l > ULDl[e.box].dim.l or e.y + b.b > ULDl[e.box].dim.b or e.z + b.h > ULDl[e.box].dim.h or ULDl[e.box].weight + b.weight > ULDl[e.box].maxWt){
+        if(b.weight == 0){
+            assert(0 == 1);
+        }
         return true;
+    }
     for (auto i : ULDPackages[e.box])
     {
         auto x = placement[i];
@@ -179,7 +183,7 @@ void Solver::solve()
         Box b = data[i];
         pair<int, pair<coords, Box>> best;
         best.first = -INF;
-        vector<Box> perms(6);
+        vector<Box> perms(6, b);
         perms[0].l = b.l;
         perms[0].b = b.b;
         perms[0].h = b.h; 
@@ -211,8 +215,10 @@ void Solver::solve()
                     continue;
                 p.isPriority = b.isPriority;
                 int score = this->merit.val(e, p, this);
-                if (best.first < score)
+                if (best.first < score){
+                    
                     best = pair<int, pair<coords, Box>>(score, pair<coords, Box>(e, p));
+                }
             }
         // update vals
         // cout << best.first << " " << best.second.first.x << " " << best.second.first.y << " " << best.second.first.z << " " << best.second.second.l << " " << best.second.second.b << " " << best.second.second.h << endl;
@@ -220,7 +226,9 @@ void Solver::solve()
             continue;
         if (data[i].isPriority)
             ULDHasPriority[best.second.first.box] = true;
+        // assert(best.second.second.weight == data[i].weight);
         placement[i] = best.second;
+        // assert(placement[i].second.weight == data[i].weight);
         ULDPackages[best.second.first.box].insert(i);
         ULD_sorted_x[best.second.first.box].insert(i);
         ULD_sorted_y[best.second.first.box].insert(i);
@@ -244,12 +252,22 @@ void Solver::solve()
 void Solver::update(int i)
 {
     int b = placement[i].first.box;
+    assert(placement[i].second.weight == data[i].weight);
     updateMaxBound(i);
     updateResidue(i);
     ULDl[b].com.x += (placement[i].first.x + placement[i].second.l / 2) * data[i].weight;
     ULDl[b].com.y += (placement[i].first.y + placement[i].second.b / 2) * data[i].weight;
     ULDl[b].com.z += (placement[i].first.z + placement[i].second.h / 2) * data[i].weight;
     ULDl[b].weight += data[i].weight;
+    
+    if(!(ULDl[b].weight <= ULDl[b].maxWt))
+    {
+        cout << placement[i].second.weight << " " << data[i].weight << endl;
+        cout.flush();
+        // cout << "i is " << i << " b is " << b << " weight is " << ULDl[b].weight << " maxWt is " << ULDl[b].maxWt << endl;
+    }
+        
+    assert(ULDl[b].weight <= ULDl[b].maxWt);
     surfaces[b].insert(make_pair(placement[i].first.z+placement[i].second.h,make_pair(make_pair(placement[i].first.x,placement[i].first.y),make_pair(placement[i].first.x + placement[i].second.l,placement[i].first.y + placement[i].second.b))));
 }
 
@@ -661,52 +679,9 @@ void Solver::projection_neg_x_advanced(vector<coords> &advanced_eps, coords star
 }
 void Solver::addEP2(int i)
 {
-    // ep.erase(pair<int,pii>(placement[i].first.x,pii(placement[i].first.y,placement[i].first.z)));
-    // coords ob1;
-    // auto p = placement[i];
-    // // placement[i].first=def;
-    // ob1.x=p.first.x+placement[i].second.l;
-    // ob1.y=p.first.y;
-    // ob1.z=p.first.z+p.second.h;
-    // vector<pair<pair<int,int>,pair<int,int>>>faces,faces_checked;
-    // For(j,i)
-    // {
-    //     faces.push_back(make_pair(make_pair(placement[j].first.x,placement[j].first.y),make_pair(placement[j].first.y+placement[j].second.b,placement[j].first.z+placement[j].second.h)));
-    // }
-    // sort(faces.begin(),faces.end(),check);
-    // For(j,i)
-    // {
-    //     int x1=faces[j].first.first;
-    //     // int y1=faces[j].second.first;
-    //     int z1=faces[j].second.second;
-    //     if(ob1.z<z1 || ob1.x>x1)
-    //     continue;
-    //     if(((ob1.y>=faces[j].first.second) && (ob1.y<=faces[j].second.first))==false)
-    //     continue;
-    //     int t=0;
-    //     for(auto yy:placement)
-    //     {
-    //         int x=yy.first.x;
-    //         int y=yy.first.y;
-    //         int z=yy.first.z;
-    //         if(ob1.x<x && x<x1 && z1>yy.first.z && z1<yy.first.z+yy.second.h)
-    //         t=1;
-    //     }
-    //     // if(t==0)
-    //     if(t==0)
-    //     {
-    //         coords d;
-    //         d.x=ob1.x;
-    //         d.y=ob1.y;
-    //         d.z=faces[j].second.second;
-    //         auto r =getResidueSpace(d);
-    //         if(r.first*r.second.first*r.second.second!=0)ep[convertCoords(d)] = r;
-    //     }
-    //     // faces_checked.push_back(faces[j]);
-    // }
-    // cout << placement[i].first.box << " ";
     coords ob1, ob2, ob3;
     auto p = placement[i];
+    auto peow = p;
     // p.first = def;
     int uid = p.first.box;
     ob1.box = uid;
@@ -727,7 +702,7 @@ void Solver::addEP2(int i)
     // cout << ob2.x << " " << ob2.y << " " << ob2.z << endl;
     // cout << ob3.x << " " << ob3.y << " " << ob3.z << endl;
     // cout << endl;
-    
+    assert(placement[i].second.weight == data[i].weight);
     vector<coords> advanced_eps;
     projection_neg_y_advanced(advanced_eps, ob1, i);
     projection_neg_z_advanced(advanced_eps, ob1, i);
@@ -744,7 +719,7 @@ void Solver::addEP2(int i)
             ep[convertCoords(x)] = r;
     }
     placement[i] = p; 
-    
+    assert(placement[i].second.weight == data[i].weight);
 }
 void Solver::addEP(int i)
 {
@@ -995,8 +970,10 @@ bool Solver::checkGravity(coords e, Box b)
     return false;
     return true;
 }
-void Solver:: gravity_pull(int i)
+void Solver::gravity_pull(int i)
 {
+    // cout << __LINE__ << endl;
+    assert(placement[i].second.weight==data[i].weight);
     pair<int,int>x1_min=make_pair(placement[i].first.x,placement[i].first.y),x1_max={placement[i].first.x+placement[i].second.l,placement[i].first.y+placement[i].second.b};
     int m=0;
     for(auto x:surfaces[placement[i].first.box])
@@ -1007,33 +984,9 @@ void Solver:: gravity_pull(int i)
         m=max(m,x.first);
     }
     placement[i].first.z=m;
+    assert(placement[i].second.weight==data[i].weight);
 }
-// void Solver::gravity_pull(int i)
-// {
-//     auto x1_min = make_pair(placement[i].first.x, placement[i].first.y);
-//     auto x1_max = make_pair(placement[i].first.x + placement[i].second.l, placement[i].first.y + placement[i].second.b);
-    
-//     int m = 0;
-//     for (auto x : surfaces)
-//     {
-//         auto p = x;
-//         auto x2_min = make_pair(p.second.first.first, p.second.first.second);
-//         auto x2_max = make_pair(p.second.second.first, p.second.second.second);
 
-//         bool is_overlapping = x1_max.first > x2_min.first &&
-//                               x1_min.first < x2_max.first &&
-//                               x1_max.second > x2_min.second &&
-//                               x1_min.second < x2_max.second;
-
-//         if (is_overlapping && p.first <= placement[i].first.z)
-//         {
-//             m = max(m, p.first);
-//         }
-//     }
-
-//     placement[i].first.z = m;
-//     // c+=1-checkGravity(placement[i].first,placement[i].second);
-// }
 
 // double weightz = 0.2;
 
@@ -1081,7 +1034,7 @@ void ScoredSolver::solve(){
         Box b = data[i];
         pair<int, pair<coords, Box>> best;
         best.first = -INF;
-        vector<Box> perms(6);
+        vector<Box> perms(6, b);
         perms[0].l = b.l;
         perms[0].b = b.b;
         perms[0].h = b.h; 
@@ -1100,7 +1053,7 @@ void ScoredSolver::solve(){
         perms[5].l = b.h;
         perms[5].b = b.l;
         perms[5].h = b.b;
-        for (Box p : perms)
+        for (Box p : perms){
             for (auto x : ep)
             {
                 // check if it can fit
@@ -1111,15 +1064,21 @@ void ScoredSolver::solve(){
                 e.z = x.first.second.second.second;
                 if(checkCollision(e,p))
                     continue;
+                
+                // cout.flush();
+                
                 p.isPriority = b.isPriority;
                 int score = this->merit.val(e, p, this);
-                if (best.first < score)
+                if (best.first < score){
                     best = pair<int, pair<coords, Box>>(score, pair<coords, Box>(e, p));
+                    assert(ULDl[e.box].weight + data[i].weight <= ULDl[e.box].maxWt);
+                }
             }
+        }
         // update vals
         if (best.first == -INF)
             continue;
-        insertionCounter[data[i].ID]+=1;
+        // insertionCounter[data[i].ID]+=1;
         if (data[i].isPriority){
             ULDHasPriority[best.second.first.box] = true;
             lastInsertionSet.insert(data[i].ID);
@@ -1136,6 +1095,8 @@ void ScoredSolver::solve(){
         ULD_sorted_y[best.second.first.box].insert(i);
         ULD_sorted_z[best.second.first.box].insert(i);
         // int pp=placement[i].first.z;
+        // cout << __LINE__ << endl;
+        assert(placement[i].second.weight==data[i].weight);
         gravity_pull(i);
         // if(pp!=placement[i].first.z)
         // c++;
@@ -1185,6 +1146,7 @@ void ScoredSolver::solve(){
     //     optimize(i);
     // }
     bestSolutionSwaps(50);
+    return;
     {
     auto start = std::chrono::system_clock::now();
     createCachedSolver(0);
@@ -1371,8 +1333,10 @@ void ScoredSolver::bestSolutionSwaps(int swaps){
         constructedSolution.push_back(it);
     }
     
-
-    FILE* file = freopen("analysis.txt", "w", stdout);
+    stringstream filename;
+    filename << "analysis_" << time(nullptr) << ".txt";
+    // filename.str().c_str()
+    FILE* file = freopen("analysis_2.txt", "w", stdout);
     for(int i = 0; i < constructedSolution.size()-50; i++){
         int j;
         // if(swaps != -1){
@@ -1384,22 +1348,31 @@ void ScoredSolver::bestSolutionSwaps(int swaps){
         // if(i % 50 == 0){
         //     cout.flush();
         // }
+
         cout << "Swapping " << i << "\n";
         cout.flush();
-        
+        createCachedSolver(max(static_cast<int>(0), i-50));
         for(j = max(static_cast<int>(0), i-50); j < i; j++){
             // cout << "Swapping " << i << " " << j << endl;
             swap(constructedSolution[i], constructedSolution[j]);
-            Solver sr(emptySorter, this->merit, constructedSolution, this->originalUldList);
-            sr.solve();
-            // cout << "Found a solution at swapping " << i << " " << j << " with cost " << sr.cost() << endl;
-            
-            if(sr.cost() > bestCost){
+            // Solver sr(emptySorter, this->merit, constructedSolution, this->originalUldList);
+            // sr.solve();
+            solveCached(constructedSolution);
+            auto newCost = this->cost();
+            // cout << "Found a solution at swapping " << i << " " << j << " with cost " << newCost << "\n";
+            if(newCost > bestCost){
                 // Maybe update best solution
-                bestCost = sr.cost();
-                cout << "swapping " << i << " " << j << " as " << constructedSolution[i].ID << " " << constructedSolution[j].ID << " with cost " << sr.cost() << "\n";
-                this->data = sr.data;
-                sr.writeToFile("best_solution.txt");
+                // if(newCost){
+                    
+                // }
+                bestCost = newCost;
+                cout << "swapping " << i << " " << j << " as " << constructedSolution[i].ID << " " << constructedSolution[j].ID << " with cost " << newCost << endl;
+                for(auto it: ULDl){
+                    assert(it.weight <= it.maxWt);
+                    cout << it.weight << " ";
+                }
+                // this->data = sr.data;
+                this->writeToFile("best_solution_alt.txt");
             }
             else{
                 swap(constructedSolution[i], constructedSolution[j]);
@@ -1547,7 +1520,7 @@ void ScoredSolver::createCachedSolver(int _solveTill){
         Box b = data[i];
         pair<int, pair<coords, Box>> best;
         best.first = -INF;
-        vector<Box> perms(6);
+        vector<Box> perms(6, b);
         perms[0].l = b.l;
         perms[0].b = b.b;
         perms[0].h = b.h; 
@@ -1598,7 +1571,8 @@ void ScoredSolver::createCachedSolver(int _solveTill){
         ULD_sorted_x[best.second.first.box].insert(i);
         ULD_sorted_y[best.second.first.box].insert(i);
         ULD_sorted_z[best.second.first.box].insert(i);
-        // int pp=placement[i].first.z;
+        // cout << __LINE__ << endl;
+        assert(placement[i].second.weight==data[i].weight);
         gravity_pull(i);
         // if(pp!=placement[i].first.z)
         // c++;
@@ -1622,7 +1596,9 @@ void ScoredSolver::createCachedSolver(int _solveTill){
     cachedULDl = ULDl;
 }
 
-void ScoredSolver::solveCached(vector<Box> data){
+void ScoredSolver::solveCached(vector<Box> _data){
+    data = _data;
+
     if(!isCached){
         return;
     }
@@ -1645,7 +1621,7 @@ void ScoredSolver::solveCached(vector<Box> data){
         Box b = data[i];
         pair<int, pair<coords, Box>> best;
         best.first = -INF;
-        vector<Box> perms(6);
+        vector<Box> perms(6, b);
         perms[0].l = b.l;
         perms[0].b = b.b;
         perms[0].h = b.h; 
@@ -1697,6 +1673,8 @@ void ScoredSolver::solveCached(vector<Box> data){
         ULD_sorted_y[best.second.first.box].insert(i);
         ULD_sorted_z[best.second.first.box].insert(i);
         // int pp=placement[i].first.z;
+        assert(placement[i].second.weight == data[i].weight);
+        // cout << __LINE__ << endl;
         gravity_pull(i);
         // if(pp!=placement[i].first.z)
         // c++;
@@ -1704,6 +1682,7 @@ void ScoredSolver::solveCached(vector<Box> data){
         // addEP(i);
         update(i);
     }
+
 }
 
 void ScoredSolver::optimize(int _iter){
@@ -1799,7 +1778,7 @@ void ScoredSolver::optimize(int _iter){
         Box b = data[i];
         pair<int, pair<coords, Box>> best;
         best.first = -INF;
-        vector<Box> perms(6);
+        vector<Box> perms(6, b);
         perms[0].l = b.l;
         perms[0].b = b.b;
         perms[0].h = b.h; 
@@ -1851,6 +1830,8 @@ void ScoredSolver::optimize(int _iter){
         ULD_sorted_y[best.second.first.box].insert(i);
         ULD_sorted_z[best.second.first.box].insert(i);
         // int pp=placement[i].first.z;
+        // cout << __LINE__ << endl;
+        assert(placement[i].second.weight==data[i].weight);
         gravity_pull(i);
         // if(pp!=placement[i].first.z)
         // c++;
