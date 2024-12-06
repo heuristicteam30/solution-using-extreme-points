@@ -90,32 +90,21 @@ bool Solver::writeToFile(string filename){
 int Solver::cost()
 {
     int c = 0;
-    int count=0;
     set<int> priorityShipments;
     For(i, data.size())
     {
         if (placement[i].first.x == -1)
         {
-            c -= data[i].cost;
+            c -= data[i].cost; // cost of left out package
             if (data[i].isPriority)
-            {
-                count++;
-                c -= NON_PRIORITY_COST;
-            }
+                c -= PRIORITY_MISS_COST; // incur high cost if priority package remains unloaded
         }
-        else
+        else if(data[i].isPriority)
         {
-            //                c+=data[i].cost;
-
-            if (data[i].isPriority)
-                priorityShipments.insert(placement[i].first.box);
+            priorityShipments.insert(placement[i].first.box);
         }
     }
-    c -= priorityShipments.size() * PRIORITY_ULD_COST;
-    //        For(i,ULDl.size())c-=abs(ULDl[i].dim.l/2-ULDl[i].com.x)+abs(ULDl[i].dim.b/2-ULDl[i].com.y)+abs(ULDl[i].dim.h/2-ULDl[i].com.z);
-    //        cout<<c<<"\n";
-    // cout << "Priority left" << count << "\n";
-    // cout << priorityShipments.size() << "\n";
+    c -= priorityShipments.size() * NEW_ULD_PRIORITY_COST;
     return c;
 }
 bool Solver::checkCollision(coords e, Box b)
