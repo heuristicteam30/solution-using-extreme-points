@@ -1,19 +1,13 @@
-// #include "bits/stdc++.h"
 #include "bits/stdc++.h"
 #include "solver.h"
-// #include "genetic.cpp"
+
 #define int long long
-#define For(i, n) for (int i = 0; i < n; i++)
-#define FOR(k, i, n) for (int i = k; i < n; i++)
-#define vi vector<int>
-#define max(a, b) (a > b ? a : b)
-#define maxP(a, b) (a.first > b.first ? a : b)
-#define min(a, b) (a < b ? a : b)
 #define INF 10000000000000000
-#define pii pair<int, int>
+
 #define PRIORITY_MISS_COST 1000000
 #define NEW_ULD_PRIORITY_COST 5000
 #define RESIDUE_THRESHOLD 0
+
 #define convertCoords(pt) pair<int, pair<int, pii>>(pt.box, pair<int, pii>(pt.x, pii(pt.y, pt.z)))
 using namespace std;
 
@@ -28,8 +22,11 @@ vector<Box> dat(400);
 #define POWER_FAC_MAX 4
 #define POWER_FAC_INCREMENT 0.05
 
-double weightz = 0.1;
+/*For the given dataset, these parameters comout to be most optimal*/
+double residue_weight_z = 0.1;
 double power_fac = 3.7;
+
+chrono::system_clock::time_point start;
 
 const int LevelXYBoundWeight = 10;
 void final_execution()
@@ -179,7 +176,7 @@ void final_execution()
 
     Merit Residue; // Residual merit function
     Residue.val = residueFunc;
-
+    FILE *file = freopen("log.txt", "w", stdout);
     // Read ULD input from file
     freopen("ULD.in", "r", stdin);
     for (int i = 0; i < ULDList.size(); ++i)
@@ -201,26 +198,22 @@ void final_execution()
         dat[i].isPriority = (s == "Priority");
         cin >> dat[i].cost;
     }
-
-    // Solve the packing problem
-
-    /*Related to score-based method*/
-    // int _iter = 1000;
-
-    int cost = INF;
+    cout << "Data read successfully" << endl;
+    int cost = numeric_limits<int>::max();
 
     double weightz_min = 0.1, power_fac_min = 3.7;
     Sorter Final_Ht = Marks_Cost_Vol_Ht;
 
-    auto start = chrono::system_clock::now();
-    // for(weightz = 0.0; weightz <= 0.5; weightz += 0.05){
+    
+    start = chrono::system_clock::now();
+    // for(residue_weight_z = 0.0; residue_weight_z <= 0.5; residue_weight_z += 0.05){
     //     for(power_fac= 3; power_fac <= 4; power_fac += 0.05){
     //         Solver s(Final_Ht, Residue, dat, ULDList);
     //         s.solve();
     //         if(-s.cost() <= cost){
-    //             cout << "Weightz: " << weightz << " Powerfac: " << power_fac << " gave me a cost of " << -s.cost() << endl;
+    //             cout << "Weightz: " << residue_weight_z << " Powerfac: " << power_fac << " gave me a cost of " << -s.cost() << endl;
     //             cost = -s.cost();
-    //             weightz_min = weightz;
+    //             weightz_min = residue_weight_z;
     //             power_fac_min = power_fac;
     //         }
     //     }
@@ -234,18 +227,23 @@ void final_execution()
                 << "Elapsed time: " << elapsed_seconds.count() << "s"
                 << endl;
     power_fac = power_fac_min;
-    weightz = weightz_min;
+    residue_weight_z = weightz_min;
     Sorter emptySorter;
     emptySorter.val = [](vector<Box> &data)
     {
         return;
     };
-    // Solver s(Final_Ht, Residue, dat, ULDList);
-    // s.solve();
-    // cout << s.cost() << endl;
-    ScoredSolver s(Final_Ht, Residue, dat, ULDList, 0);
+
+    /* Tune the iterations, neighbourhoodSize, etc. to scan faster and get quicker, 
+    but maybe less optimal solutions.
+    Current tuning helps complete it in around 30 minutes */
+    int iterations = 1;
+    int neighbourhoodSize = 30;
+    int ignoreParameter = 140;
+
+    ScoredSolver s(Final_Ht, Residue, dat, ULDList, 1, 30, 150);
     s.solve();
-    cout << s.cost() << endl;
+    fclose(file);
 #endif
 }
 

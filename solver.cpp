@@ -2,7 +2,8 @@
 
 using namespace std;
 
-extern double weightz, power_fac;
+extern double residue_weight_z, power_fac;
+extern chrono::system_clock::time_point start;
 
 /*
  *  @brief: check if two packages collide
@@ -175,7 +176,7 @@ void Solver::resetSolveTill()
 void Solver::solve()
 {
 // int c=0;
-// cout << weightz << endl;
+// cout << residue_weight_z << endl;
 #ifndef GENETIC
 #ifdef OLD_SORT
     sort(data.begin(), data.end(), this->sorter.val);
@@ -1068,7 +1069,7 @@ int residueFunc(coords c, Box b, Solver *s)
 {
     int r = 0;
     r += (1LL * (s->ULDHasPriority[c.box]) * 100000000000LL) * b.isPriority;
-    float relativeDifference = (s->ep[convertCoords(c)].first - b.l) / 1.0 / s->ep[convertCoords(c)].first + (s->ep[convertCoords(c)].second.first - b.b) / 1.0 / s->ep[convertCoords(c)].second.first + weightz * (s->ep[convertCoords(c)].second.second - b.h) / 1.0 / s->ep[convertCoords(c)].second.second;
+    float relativeDifference = (s->ep[convertCoords(c)].first - b.l) / 1.0 / s->ep[convertCoords(c)].first + (s->ep[convertCoords(c)].second.first - b.b) / 1.0 / s->ep[convertCoords(c)].second.first + residue_weight_z * (s->ep[convertCoords(c)].second.second - b.h) / 1.0 / s->ep[convertCoords(c)].second.second;
     relativeDifference *= 1000000;
     r += relativeDifference;
     return r;
@@ -1166,50 +1167,17 @@ void ScoredSolver::solve()
         update(i);
     }
 
-    cout << "Base Solution Cost: " << this->cost() << endl;
+    cout << "Base Solution Cost: " << -this->cost() << endl;
     bestCost = this->cost();
     bestSolution = lastInsertion;
-    bestSolutionSwaps(50);
-    return;
-    {
-        auto start = std::chrono::system_clock::now();
-        createCachedSolver(0);
-        solveCached(data);
-        cout << "Cost at 0 is " << this->cost() << endl;
-        // for(int i = 1; i != 100; i++){
-        //     solveCached(data);
-        //     // cout << "Cached Solver " << i << " cost: " << this->cost() << endl;
-        // }
-        auto end = std::chrono::system_clock::now();
-
-        std::chrono::duration<double> elapsed_seconds = end - start;
-        std::time_t end_time = std::chrono::system_clock::to_time_t(end);
-
-        std::cout << "finished computation at " << std::ctime(&end_time)
-                  << "elapsed time: " << elapsed_seconds.count() << "s"
-                  << std::endl;
+    for(int iter = 0; iter < iterations; iter++){
+        cout << "Starting iteration " << iter << endl;
+        bestSolutionSwaps(neighbourhoodSize, ignoreParameter);
     }
-    {
-        auto start = std::chrono::system_clock::now();
-        for (int i = 1; i != 100; i++)
-        {
-            optimize(i);
-            // cout << "Cached Solver " << i << " cost: " << this->cost() << endl;
-        }
-        auto end = std::chrono::system_clock::now();
-
-        std::chrono::duration<double> elapsed_seconds = end - start;
-        std::time_t end_time = std::chrono::system_clock::to_time_t(end);
-
-        std::cout << "finished computation at " << std::ctime(&end_time)
-                  << "elapsed time: " << elapsed_seconds.count() << "s"
-                  << std::endl;
-    }
-
-    cout << "New Cost: " << this->cost() << endl;
     return;
 
     /*Older methods related to scoring*/
+
     // Initialising the scores
     // double k = 2.0;
     // for(auto i: economyPackages){
@@ -1336,8 +1304,10 @@ void ScoredSolver::costDensityOptimize()
         }
     }
 }
-/// @brief Tries to find optimal solutions by swapping objects in a given proximity
-/// @param swaps The max proximity of the objects to be considered for swapping
+/**
+ * @brief Tries to find optimal solutions by swapping objects in a given proximity
+ * @param swaps The max proximity of the objects to be considered for swapping
+ */
 void ScoredSolver::bestSolutionSwaps(int swaps, int ignoredObjects, bool emptySort)
 {
     // Empty Sorter if we don't want to sort the un-inserted objects
@@ -1364,15 +1334,12 @@ void ScoredSolver::bestSolutionSwaps(int swaps, int ignoredObjects, bool emptySo
     if (!emptySort)
     {
         this->sorter.val(nonInsertedObjects);
-        for (auto it : nonInsertedObjects)
-        {
-            constructedSolution.push_back(it);
-        }
     }
-    stringstream filename;
-    filename << "analysis_" << time(nullptr) << ".txt";
-    FILE *file = freopen("testing.txt", "w", stdout);
-    for (int i = 0; i < constructedSolution.size() - 50; i++)
+    for (auto it : nonInsertedObjects)
+    {
+        constructedSolution.push_back(it);
+    }
+    for (int i = 0; i < constructedSolution.size() - ignoredObjects; i++)
     {
         int j;
         if (swaps != -1)
@@ -1383,22 +1350,30 @@ void ScoredSolver::bestSolutionSwaps(int swaps, int ignoredObjects, bool emptySo
         {
             j = 0;
         }
-        cout << "Swapping " << i << "\n";
-        cout.flush();
-        createCachedSolver(max(static_cast<int>(0), i - 50));
-        for (j = max(static_cast<int>(0), i - 50); j < i; j++)
+        if(i % 10 == 0){
+            cout << "Swapping " << i << "\n";
+            cout.flush();
+        }
+        createCachedSolver(max(static_cast<int>(0), i - swaps));
+        for (j = max(static_cast<int>(0), i - swaps); j < i; j++)
         {
-            // cout << "Swapping " << i << " " << j << endl;
             swap(constructedSolution[i], constructedSolution[j]);
             solveCached(constructedSolution);
             auto newCost = this->cost();
             if (newCost > bestCost)
             {
                 // Maybe update best solution
+                auto updated = chrono::system_clock::now();
+                time_t end_time = chrono::system_clock::to_time_t(updated);
+                auto elapsed_seconds = updated - start;
                 bestCost = newCost;
-                cout << "swapping " << i << " " << j << " as " << constructedSolution[i].ID << " " << constructedSolution[j].ID << " with cost " << newCost << endl;
+                cout << "Got " << -newCost << " at " << ctime(&end_time) << " with " << i << " " << j << " as " << constructedSolution[i].ID << " " << constructedSolution[j].ID << "\n";
+                cout << "Elapsed time since beginning: " << elapsed_seconds.count() << "s\n";
                 // this->data = sr.data;
-                this->writeToFile("28648_testing.txt");
+                stringstream filename;
+                filename << -newCost << "_solution_" << end_time << ".txt";
+                this->writeToFile(filename.str());
+                this->writeToFile("best_solution.txt");
             }
             else
             {
@@ -1406,23 +1381,33 @@ void ScoredSolver::bestSolutionSwaps(int swaps, int ignoredObjects, bool emptySo
             }
         }
     }
+    cout << endl;
+    for(auto it: constructedSolution){
+        cout << it.ID << ", ";
+    }
+    this->data = constructedSolution;
+    cout << "Done outputting" << endl;
     cout.flush();
-    fclose(file);
+}
+/**
+ * @brief Deprecated function for introducing random swaps in the best solution
+ */
+void ScoredSolver::insertedSwap(int _numSwaps){
+    int numSwaps = _numSwaps;
+    for(int i = 0; i < numSwaps; i++){
+        mt19937 mt(time(nullptr));
+        int idx, idy;
+        do{
+            idx = mt()%bestSolution.size();
+            idy = mt()%bestSolution.size();
+        } while(idx == idy);
+        swap(score[bestSolution[idx]], score[bestSolution[idy]]);
+    }
 }
 
-// void ScoredSolver::insertedSwap(int _numSwaps){
-//     int numSwaps = _numSwaps;
-//     for(int i = 0; i < numSwaps; i++){
-//         mt19937 mt(time(nullptr));
-//         int idx, idy;
-//         do{
-//             idx = mt()%bestSolution.size();
-//             idy = mt()%bestSolution.size();
-//         } while(idx == idy);
-//         swap(score[bestSolution[idx]], score[bestSolution[idy]]);
-//     }
-// }
-
+/**
+ * @brief Long-term re-initialization of the scores of the packages
+ */
 void ScoredSolver::reinitialize(bool _swap, double k, int num_swap)
 {
     set<int> bestSolutionSet(bestSolution.begin(), bestSolution.end());
@@ -1797,18 +1782,11 @@ void ScoredSolver::optimize(int _iter)
         return a.l*a.b*a.h > b.l*b.b*b.h; });
 #endif
 
-// this->sorter.val(data);
-#ifdef DATA_ORDERING
-    cout << "Data ordering:" << endl;
-    for (auto it : data)
-    {
-        // cout << it.ID << "," << score[it.ID] << " ";
-        cout << it.ID << " ";
+    // this->sorter.val(data);
+    for(int i = 0; i < ULDl.size(); i++){ 
+        ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
     }
-    cout << endl;
-#endif
-    For(i, ULDl.size()) ep[pair<int, pair<int, pii>>(i, pair<int, pii>(0, pii(0, 0)))] = pair<int, pii>(ULDl[i].dim.l, pii(ULDl[i].dim.b, ULDl[i].dim.h));
-    For(i, data.size())
+    for(int i = 0; i < data.size(); i++)
     {
         // Construct Economy Package and Box Map
         Box b = data[i];

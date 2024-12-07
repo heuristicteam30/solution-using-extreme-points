@@ -170,7 +170,7 @@ public:
     set<int, function<bool(const int &, const int &)>> cachedULD_blocking_boxes_y;
     set<int, function<bool(const int &, const int &)>> cachedULD_blocking_boxes_z;
 
-    ScoredSolver(Sorter sorter_, Merit merit_, vector<Box> boxes, vector<Uld> ULD_, int iterations_) : Solver(sorter_, merit_, boxes, ULD_), iterations(iterations_), originalUldList(ULD_)
+    ScoredSolver(Sorter sorter_, Merit merit_, vector<Box> boxes, vector<Uld> ULD_, int iterations_, int neighbourhoodSize_ = 50, int ignoreParameter_ = 50) : Solver(sorter_, merit_, boxes, ULD_), iterations(iterations_), originalUldList(ULD_), neighbourhoodSize(neighbourhoodSize_), ignoreParameter(ignoreParameter_)
     {
         /*ID based indexing of both score and boxMap
         Leaving buffer to prevent unwanted seg faults
@@ -179,15 +179,25 @@ public:
         score.resize(boxes.size() + 5);
         boxMap.resize(boxes.size() + 5);
     }
+
+    
+    /* Solver and assiting classes*/
     void solve() override;
     void arrangeDataFromIDVector(vector<int> idVector);
     void costDensityOptimize();
 
-    void createCachedSolver(int cachingIndex);
-    bool isCached = false;
-    void solveCached(vector<Box> data);
 
+    /* Caching and Neighborhood Swap Related */
+    bool isCached = false;
+    int neighbourhoodSize = 50;
+    int ignoreParameter = 50;
+
+    void createCachedSolver(int cachingIndex);
+    void solveCached(vector<Box> data);
+    void insertedSwap(int _numSwaps);
     void bestSolutionSwaps(int swaps = 50, int ignoredObjects = 50, bool emptySort = false);
+
+    /* DEPRECATED - Score Update Method related */
     void reinitialize(bool _swap, double k = 2.0, int num_swap = SWAP_PAIRS);
     void update_scores(int i);
     void optimize(int _iter);
