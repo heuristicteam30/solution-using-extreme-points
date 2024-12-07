@@ -1331,10 +1331,6 @@ void ScoredSolver::bestSolutionSwaps(int swaps, int ignoredObjects, bool emptySo
             nonInsertedObjects.push_back(*boxMap[it]);
         }
     }
-    if (!emptySort)
-    {
-        this->sorter.val(nonInsertedObjects);
-    }
     for (auto it : nonInsertedObjects)
     {
         constructedSolution.push_back(it);

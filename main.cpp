@@ -206,18 +206,18 @@ void final_execution()
 
     
     start = chrono::system_clock::now();
-    for(residue_weight_z = WEIGHTZ_MIN; residue_weight_z <= WEIGHTZ_MAX; residue_weight_z += WEIGHTZ_INCREMENT){
-        for(power_fac= POWER_FAC_MIN; power_fac <= POWER_FAC_MAX; power_fac += POWER_FAC_INCREMENT){
-            Solver s(Final_Ht, Residue, dat, ULDList);
-            s.solve();
-            if(-s.cost() <= cost){
-                cout << "Weightz: " << residue_weight_z << " Powerfac: " << power_fac << " gave me a cost of " << -s.cost() << endl;
-                cost = -s.cost();
-                weightz_min = residue_weight_z;
-                power_fac_min = power_fac;
-            }
-        }
-    }
+    // for(residue_weight_z = WEIGHTZ_MIN; residue_weight_z <= WEIGHTZ_MAX; residue_weight_z += WEIGHTZ_INCREMENT){
+    //     for(power_fac= POWER_FAC_MIN; power_fac <= POWER_FAC_MAX; power_fac += POWER_FAC_INCREMENT){
+    //         Solver s(Final_Ht, Residue, dat, ULDList);
+    //         s.solve();
+    //         if(-s.cost() <= cost){
+    //             cout << "Weightz: " << residue_weight_z << " Powerfac: " << power_fac << " gave me a cost of " << -s.cost() << endl;
+    //             cost = -s.cost();
+    //             weightz_min = residue_weight_z;
+    //             power_fac_min = power_fac;
+    //         }
+    //     }
+    // }
     auto end = chrono::system_clock::now();
 
     chrono::duration<double> elapsed_seconds = end - start;
