@@ -9,11 +9,13 @@
 #define PRIORITY_MISS_COST 1000000
 #define NEW_ULD_PRIORITY_COST 5000
 #define RESIDUE_THRESHOLD 0
-// #define weightz 0.2
 #define convertCoords(pt) pair<int, pair<int, pii>>(pt.box, pair<int, pii>(pt.x, pii(pt.y, pt.z)))
 using namespace std;
 
 #define SWAP_PAIRS 50
+
+/*Define this to use EP2 based solving*/
+#define EP2
 
 bool check(const pair<pair<int, int>, pair<int, int>> &a, const pair<pair<int, int>, pair<int, int>> &b);
 class Solver;
@@ -22,10 +24,6 @@ struct Box
     int l, b, h, weight, cost, ID;
     bool isPriority;
 };
-// struct Sorter {
-// //    function<void(Solver*)>init;
-//     function<bool(Box,Box)>val;
-// };
 struct Sorter
 {
     function<void(vector<Box> &data)> val;
@@ -63,7 +61,7 @@ public:
     int solveFrom = 0;
     int solveTill;
 
-    // data structures for additional EP creation
+    // Data structures for additional EP creation
     function<bool(const int &, const int &)> compare_x;
     function<bool(const int &, const int &)> compare_y;
     function<bool(const int &, const int &)> compare_z;
@@ -82,37 +80,6 @@ public:
 
     // Constructor
     Solver(Sorter sorter_, Merit merit_, vector<Box> boxes, vector<Uld> ULD_);
-    Solver(Solver *other)
-        : meritVar(other->meritVar),
-          sortVar(other->sortVar),
-          ep(other->ep),
-          merit(other->merit),
-          sorter(other->sorter),
-          placement(other->placement),
-          ULDPackages(other->ULDPackages),
-          ULDHasPriority(other->ULDHasPriority),
-          data(other->data),
-          def(other->def),
-          ULDl(other->ULDl),
-          surfaces(other->surfaces),
-          solveFrom(other->solveFrom),
-          solveTill(other->solveTill),
-          compare_x(other->compare_x),
-          compare_y(other->compare_y),
-          compare_z(other->compare_z),
-          ULD_sorted_x(other->ULD_sorted_x),
-          ULD_sorted_y(other->ULD_sorted_y),
-          ULD_sorted_z(other->ULD_sorted_z),
-          compare_x_base(other->compare_x_base),
-          compare_y_base(other->compare_y_base),
-          compare_z_base(other->compare_z_base),
-          ULD_blocking_boxes_x(other->ULD_blocking_boxes_x),
-          ULD_blocking_boxes_y(other->ULD_blocking_boxes_y),
-          ULD_blocking_boxes_z(other->ULD_blocking_boxes_z)
-    {
-        cout << "I was called" << endl;
-        // cout << static_cast<int>(ep == other.ep) << endl;
-    };
 
     bool writeToFile(string filename);
     int cost();
@@ -178,10 +145,13 @@ public:
     vector<Uld> originalUldList;
     vector<Box *> boxMap;
     vector<int> bestSolution;
-    vector<double> score;         /*Store the score correpsonding to each object.*/
+
+    /*Related to Scoring based Procedure*/
+    vector<double> score;         /*Store the score correpsonding to each object*/
     vector<int> insertionCounter; /*Store how many times each ID has been introduced in a solution, and how many times it hasn't*/
     vector<int> lastInsertion;    /*Store the order of insertion in the last iteration. We store only economy packages for convenience*/
-    set<int> lastInsertionSet;    /*Store the last insertion set for quick access*/
+    set<int> lastInsertionSet;    /*Store the last insertion as a set for quick access*/
+
     set<int> economyPackages;     /*Store the economy packages IDs*/
 
     /*Caching related: We use caching to ensure that all the var*/
@@ -196,20 +166,18 @@ public:
     vector<set<int, function<bool(const int &, const int &)>>> cachedULD_sorted_y;
     vector<set<int, function<bool(const int &, const int &)>>> cachedULD_sorted_z;
 
-    // function<bool(const int&, const int&)> cachedcompare_x_base;
-    // function<bool(const int&, const int&)> cachedcompare_y_base;
-    // function<bool(const int&, const int&)> cachedcompare_z_base;
-
     set<int, function<bool(const int &, const int &)>> cachedULD_blocking_boxes_x;
     set<int, function<bool(const int &, const int &)>> cachedULD_blocking_boxes_y;
     set<int, function<bool(const int &, const int &)>> cachedULD_blocking_boxes_z;
 
     ScoredSolver(Sorter sorter_, Merit merit_, vector<Box> boxes, vector<Uld> ULD_, int iterations_) : Solver(sorter_, merit_, boxes, ULD_), iterations(iterations_), originalUldList(ULD_)
     {
-        /*ID based indexing of both score and boxMap*/
+        /*ID based indexing of both score and boxMap
+        Leaving buffer to prevent unwanted seg faults
+        due to wrongly indexed IDs                 */
         insertionCounter.resize(boxes.size() + 5);
         score.resize(boxes.size() + 5);
-        boxMap.resize(boxes.size() + 100);
+        boxMap.resize(boxes.size() + 5);
     }
     void solve() override;
     void arrangeDataFromIDVector(vector<int> idVector);

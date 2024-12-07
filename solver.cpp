@@ -20,8 +20,6 @@ Solver::Solver(Sorter sorter_, Merit merit_, vector<Box> boxes, vector<Uld> ULD_
 {
     this->merit = merit_;
     this->sorter = sorter_;
-    //        this->merit.init(this);
-    //        this->sorter.init(this);
     this->data = boxes;
     solveTill = boxes.size();
     def.x = def.y = def.z = def.box = -1;
@@ -249,32 +247,28 @@ void Solver::solve()
             continue;
         if (data[i].isPriority)
             ULDHasPriority[best.second.first.box] = true;
-        // assert(best.second.second.weight == data[i].weight);
+        
         placement[i] = best.second;
-        // assert(placement[i].second.weight == data[i].weight);
+        
         ULDPackages[best.second.first.box].insert(i);
         ULD_sorted_x[best.second.first.box].insert(i);
         ULD_sorted_y[best.second.first.box].insert(i);
         ULD_sorted_z[best.second.first.box].insert(i);
-        // int pp=placement[i].first.z;
         gravity_pull(i);
-        // if(pp!=placement[i].first.z)
-        // c++;
-        // addEP(i);
+        #ifdef EP2
         addEP2(i);
+        #endif
+        #ifndef EP2
+        addEP(i); 
+        #endif
         update(i);
-        // if(placement[i].second==data[i])
-        // if(checkGravity(placement[i].first, placement[i].second))
-        // printf("error\n");
     }
-    cout << "EP size: " << ep.size() << endl;
-    // cout << c;
 }
 
 void Solver::update(int i)
 {
     int b = placement[i].first.box;
-    assert(placement[i].second.weight == data[i].weight);
+    
     updateMaxBound(i);
     updateResidue(i);
     ULDl[b].com.x += (placement[i].first.x + placement[i].second.l / 2) * data[i].weight;
@@ -282,14 +276,6 @@ void Solver::update(int i)
     ULDl[b].com.z += (placement[i].first.z + placement[i].second.h / 2) * data[i].weight;
     ULDl[b].weight += data[i].weight;
 
-    if (!(ULDl[b].weight <= ULDl[b].maxWt))
-    {
-        cout << placement[i].second.weight << " " << data[i].weight << endl;
-        cout.flush();
-        // cout << "i is " << i << " b is " << b << " weight is " << ULDl[b].weight << " maxWt is " << ULDl[b].maxWt << endl;
-    }
-
-    assert(ULDl[b].weight <= ULDl[b].maxWt);
     surfaces[b].insert(make_pair(placement[i].first.z + placement[i].second.h, make_pair(make_pair(placement[i].first.x, placement[i].first.y), make_pair(placement[i].first.x + placement[i].second.l, placement[i].first.y + placement[i].second.b))));
 }
 
@@ -1034,18 +1020,12 @@ coords Solver::rayProjectZPos(coords start)
     start.z = max(start.z, x);
     return start;
 }
+
+/*Deprecated function for checkGravity()*/
 bool Solver::checkGravity(coords e, Box b)
 {
-    // cout << surfaces.size();
     if (e.z == 0)
         return false;
-    // return false;
-    // sort(surfaces.begin(),surfaces.end());
-    // auto start=surfaces.lower_bound(make_pair(e.z,make_pair(make_pair(0,0),make_pair(0,0))));
-    // auto end=surfaces.lower_bound(make_pair(e.z,make_pair(make_pair(3000,3000),make_pair(3000,3000))));
-    // for(auto x:surfaces)
-    // cout << x.first << " ";
-    // cout << "\n";
     pair<int, int> x1_min = make_pair(e.x, e.y), x1_max = {e.x + b.l, e.y + b.b};
     int flag = 0;
     int c = 0;
@@ -1105,9 +1085,7 @@ void ScoredSolver::solve()
     }
     for (int i = 0; i != data.size(); i++)
     {
-        /*
-        Construct a set containing IDs of each box mapped
-        */
+        /* Construct a set containing IDs of each box mapped */
         boxMap[data[i].ID] = &data[i];
         if (!data[i].isPriority)
         {
@@ -1179,25 +1157,17 @@ void ScoredSolver::solve()
         ULD_sorted_z[best.second.first.box].insert(i);
 
         gravity_pull(i);
+        #ifdef EP2
         addEP2(i);
-        // addEP(i);
+        #endif
+        #ifndef EP2
+        addEP(i); 
+        #endif
         update(i);
     }
 
     cout << "Base Solution Cost: " << this->cost() << endl;
-// #define DATA_ORDERING
-#ifdef DATA_ORDERING
-    cout << "Data ordering:" << endl;
-    for (auto it : data)
-    {
-        // cout << it.ID << "," << score[it.ID] << " ";
-        cout << it.ID << " ";
-    }
-    cout << endl;
-#endif
     bestCost = this->cost();
-    // cout << bestCost;
-    // return;
     bestSolution = lastInsertion;
     bestSolutionSwaps(50);
     return;
@@ -1401,7 +1371,6 @@ void ScoredSolver::bestSolutionSwaps(int swaps, int ignoredObjects, bool emptySo
     }
     stringstream filename;
     filename << "analysis_" << time(nullptr) << ".txt";
-    // filename.str().c_str()
     FILE *file = freopen("testing.txt", "w", stdout);
     for (int i = 0; i < constructedSolution.size() - 50; i++)
     {
@@ -1414,10 +1383,6 @@ void ScoredSolver::bestSolutionSwaps(int swaps, int ignoredObjects, bool emptySo
         {
             j = 0;
         }
-        // if(i % 50 == 0){
-        //     cout.flush();
-        // }
-
         cout << "Swapping " << i << "\n";
         cout.flush();
         createCachedSolver(max(static_cast<int>(0), i - 50));
@@ -1425,21 +1390,13 @@ void ScoredSolver::bestSolutionSwaps(int swaps, int ignoredObjects, bool emptySo
         {
             // cout << "Swapping " << i << " " << j << endl;
             swap(constructedSolution[i], constructedSolution[j]);
-            // Solver sr(emptySorter, this->merit, constructedSolution, this->originalUldList);
-            // sr.solve();
             solveCached(constructedSolution);
             auto newCost = this->cost();
-            // cout << "Found a solution at swapping " << i << " " << j << " with cost " << newCost << "\n";
             if (newCost > bestCost)
             {
                 // Maybe update best solution
                 bestCost = newCost;
                 cout << "swapping " << i << " " << j << " as " << constructedSolution[i].ID << " " << constructedSolution[j].ID << " with cost " << newCost << endl;
-                for (auto it : ULDl)
-                {
-                    assert(it.weight <= it.maxWt);
-                    cout << it.weight << " ";
-                }
                 // this->data = sr.data;
                 this->writeToFile("28648_testing.txt");
             }
@@ -1650,8 +1607,12 @@ void ScoredSolver::createCachedSolver(int _solveTill)
         ULD_sorted_z[best.second.first.box].insert(i);
 
         gravity_pull(i);
+        #ifdef EP2
         addEP2(i);
-        // addEP(i);
+        #endif
+        #ifndef EP2
+        addEP(i); 
+        #endif
         update(i);
     }
     cachedPlacement = placement;
@@ -1750,14 +1711,13 @@ void ScoredSolver::solveCached(vector<Box> _data)
         ULD_sorted_x[best.second.first.box].insert(i);
         ULD_sorted_y[best.second.first.box].insert(i);
         ULD_sorted_z[best.second.first.box].insert(i);
-        // int pp=placement[i].first.z;
-        assert(placement[i].second.weight == data[i].weight);
-        // cout << __LINE__ << endl;
         gravity_pull(i);
-        // if(pp!=placement[i].first.z)
-        // c++;
+        #ifdef EP2
         addEP2(i);
-        // addEP(i);
+        #endif
+        #ifndef EP2
+        addEP(i); 
+        #endif
         update(i);
     }
 }
@@ -1909,8 +1869,12 @@ void ScoredSolver::optimize(int _iter)
         ULD_sorted_z[best.second.first.box].insert(i);
 
         gravity_pull(i);
+        #ifdef EP2
         addEP2(i);
-
+        #endif
+        #ifndef EP2
+        addEP(i); 
+        #endif
         update(i);
     }
 }

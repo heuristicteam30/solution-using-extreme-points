@@ -16,11 +16,20 @@
 #define RESIDUE_THRESHOLD 0
 #define convertCoords(pt) pair<int, pair<int, pii>>(pt.box, pair<int, pii>(pt.x, pii(pt.y, pt.z)))
 using namespace std;
+
 vector<Uld> ULDList(6);
 vector<Box> dat(400);
 
-double weightz = 0.2;
-double power_fac = 1.0;
+#define WEIGHTZ_MIN 0.0
+#define WEIGHTZ_MAX 0.5 
+#define WEIGHTZ_INCREMENT 0.05
+
+#define POWER_FAC_MIN 3
+#define POWER_FAC_MAX 4
+#define POWER_FAC_INCREMENT 0.05
+
+double weightz = 0.1;
+double power_fac = 3.7;
 
 const int LevelXYBoundWeight = 10;
 void final_execution()
@@ -74,7 +83,6 @@ void final_execution()
              {
             if(b.isPriority and (not a.isPriority))return false;
             if(a.isPriority and (not b.isPriority))return true;
-            // if(a.isPriority and b.isPriority)return false;
             if(a.cost!=b.cost)return a.cost>b.cost;
             if(a.l*a.b*a.h==b.l*b.b*b.h)return min(a.h,min(a.b,a.l))<min(b.h,min(b.b,b.l));
             return a.l*a.b*a.h > b.l*b.b*b.h; });
@@ -198,27 +206,33 @@ void final_execution()
 
     /*Related to score-based method*/
     // int _iter = 1000;
-    // int CountPackages = 0, Cost = INF;
+
+    int cost = INF;
 
     double weightz_min = 0.1, power_fac_min = 3.7;
-
     Sorter Final_Ht = Marks_Cost_Vol_Ht;
 
-    // for(weightz = 0.1; weightz <= 0.1; weightz += 0.02){
-    //     for(power_fac= 3; power_fac <= 4; power_fac += 0.02){
+    auto start = chrono::system_clock::now();
+    // for(weightz = 0.0; weightz <= 0.5; weightz += 0.05){
+    //     for(power_fac= 3; power_fac <= 4; power_fac += 0.05){
     //         Solver s(Final_Ht, Residue, dat, ULDList);
     //         s.solve();
-    //         // cout << "Weightz: " << power_fac << " gave me a cost of " << -s.cost() << endl;
-    //         // cout.flush();
-    //         // freopen("30998_result.csv", "w", stdout);
-    //         if(-s.cost() <= Cost){
+    //         if(-s.cost() <= cost){
     //             cout << "Weightz: " << weightz << " Powerfac: " << power_fac << " gave me a cost of " << -s.cost() << endl;
-    //             Cost = -s.cost();
+    //             cost = -s.cost();
     //             weightz_min = weightz;
     //             power_fac_min = power_fac;
     //         }
     //     }
     // }
+    auto end = chrono::system_clock::now();
+
+    chrono::duration<double> elapsed_seconds = end - start;
+    time_t end_time = chrono::system_clock::to_time_t(end);
+    cout << "Heuristic Found Best Solution: " << cost << endl;
+    cout << "Finished tuning heuristic at " << ctime(&end_time)
+                << "Elapsed time: " << elapsed_seconds.count() << "s"
+                << endl;
     power_fac = power_fac_min;
     weightz = weightz_min;
     Sorter emptySorter;
@@ -226,6 +240,9 @@ void final_execution()
     {
         return;
     };
+    // Solver s(Final_Ht, Residue, dat, ULDList);
+    // s.solve();
+    // cout << s.cost() << endl;
     ScoredSolver s(Final_Ht, Residue, dat, ULDList, 0);
     s.solve();
     cout << s.cost() << endl;
