@@ -1331,6 +1331,11 @@ void ScoredSolver::bestSolutionSwaps(int swaps, int ignoredObjects, bool emptySo
             nonInsertedObjects.push_back(*boxMap[it]);
         }
     }
+    sort(nonInsertedObjects.begin(), nonInsertedObjects.end(), [&](Box &a, Box &b){
+        int vol1 = a.l*a.b*a.h, vol2 = b.l*b.b*b.h;
+        double fac1 = pow(a.cost, power_fac)/(vol1*1.0), fac2 = pow(b.cost, power_fac)/(vol2*1.0);
+        return fac1 > fac2;
+    });
     for (auto it : nonInsertedObjects)
     {
         constructedSolution.push_back(it);
