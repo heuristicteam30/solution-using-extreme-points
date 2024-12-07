@@ -15,12 +15,12 @@ vector<Uld> ULDList(6);
 vector<Box> dat(400);
 
 #define WEIGHTZ_MIN 0.0
-#define WEIGHTZ_MAX 0.5 
+#define WEIGHTZ_MAX 1.0
 #define WEIGHTZ_INCREMENT 0.05
 
 #define POWER_FAC_MIN 3
 #define POWER_FAC_MAX 4
-#define POWER_FAC_INCREMENT 0.05
+#define POWER_FAC_INCREMENT 0.1
 
 /*For the given dataset, these parameters comout to be most optimal*/
 double residue_weight_z = 0.1;
@@ -206,18 +206,18 @@ void final_execution()
 
     
     start = chrono::system_clock::now();
-    // for(residue_weight_z = 0.0; residue_weight_z <= 0.5; residue_weight_z += 0.05){
-    //     for(power_fac= 3; power_fac <= 4; power_fac += 0.05){
-    //         Solver s(Final_Ht, Residue, dat, ULDList);
-    //         s.solve();
-    //         if(-s.cost() <= cost){
-    //             cout << "Weightz: " << residue_weight_z << " Powerfac: " << power_fac << " gave me a cost of " << -s.cost() << endl;
-    //             cost = -s.cost();
-    //             weightz_min = residue_weight_z;
-    //             power_fac_min = power_fac;
-    //         }
-    //     }
-    // }
+    for(residue_weight_z = WEIGHTZ_MIN; residue_weight_z <= WEIGHTZ_MAX; residue_weight_z += WEIGHTZ_INCREMENT){
+        for(power_fac= POWER_FAC_MIN; power_fac <= POWER_FAC_MAX; power_fac += POWER_FAC_INCREMENT){
+            Solver s(Final_Ht, Residue, dat, ULDList);
+            s.solve();
+            if(-s.cost() <= cost){
+                cout << "Weightz: " << residue_weight_z << " Powerfac: " << power_fac << " gave me a cost of " << -s.cost() << endl;
+                cost = -s.cost();
+                weightz_min = residue_weight_z;
+                power_fac_min = power_fac;
+            }
+        }
+    }
     auto end = chrono::system_clock::now();
 
     chrono::duration<double> elapsed_seconds = end - start;
